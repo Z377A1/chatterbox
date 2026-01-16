@@ -46,7 +46,9 @@ class Block1D(torch.nn.Module):
 class ResnetBlock1D(torch.nn.Module):
     def __init__(self, dim, dim_out, time_emb_dim, groups=8):
         super().__init__()
-        self.mlp = torch.nn.Sequential(nn.Mish(), torch.nn.Linear(time_emb_dim, dim_out))
+        self.mlp = torch.nn.Sequential(
+            nn.Mish(), torch.nn.Linear(time_emb_dim, dim_out)
+        )
 
         self.block1 = Block1D(dim, dim_out, groups=groups)
         self.block2 = Block1D(dim_out, dim_out, groups=groups)
@@ -76,7 +78,7 @@ class TimestepEmbedding(nn.Module):
         in_channels: int,
         time_embed_dim: int,
         act_fn: str = "silu",
-        out_dim: int = None,
+        out_dim: int = None, # pyright: ignore[reportArgumentType]
         post_act_fn: Optional[str] = None,
         cond_proj_dim=None,
     ):
@@ -104,7 +106,7 @@ class TimestepEmbedding(nn.Module):
 
     def forward(self, sample, condition=None):
         if condition is not None:
-            sample = sample + self.cond_proj(condition)
+            sample = sample + self.cond_proj(condition) # pyright: ignore[reportOptionalCall]
         sample = self.linear_1(sample)
 
         if self.act is not None:
@@ -131,7 +133,14 @@ class Upsample1D(nn.Module):
             number of output channels. Defaults to `channels`.
     """
 
-    def __init__(self, channels, use_conv=False, use_conv_transpose=True, out_channels=None, name="conv"):
+    def __init__(
+        self,
+        channels,
+        use_conv=False,
+        use_conv_transpose=True,
+        out_channels=None,
+        name="conv",
+    ):
         super().__init__()
         self.channels = channels
         self.out_channels = out_channels or channels
@@ -148,12 +157,12 @@ class Upsample1D(nn.Module):
     def forward(self, inputs):
         assert inputs.shape[1] == self.channels
         if self.use_conv_transpose:
-            return self.conv(inputs)
+            return self.conv(inputs) # pyright: ignore[reportOptionalCall]
 
         outputs = F.interpolate(inputs, scale_factor=2.0, mode="nearest")
 
         if self.use_conv:
-            outputs = self.conv(outputs)
+            outputs = self.conv(outputs) # pyright: ignore[reportOptionalCall]
 
         return outputs
 
@@ -186,7 +195,7 @@ class ConformerWrapper(ConformerBlock):
             conv_causal=conv_causal,
         )
 
-    def forward(
+    def forward( # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         hidden_states,
         attention_mask,
@@ -235,7 +244,9 @@ class Decoder(nn.Module):
             input_channel = output_channel
             output_channel = channels[i]
             is_last = i == len(channels) - 1
-            resnet = ResnetBlock1D(dim=input_channel, dim_out=output_channel, time_emb_dim=time_embed_dim)
+            resnet = ResnetBlock1D(
+                dim=input_channel, dim_out=output_channel, time_emb_dim=time_embed_dim
+            )
             transformer_blocks = nn.ModuleList(
                 [
                     self.get_block(
@@ -250,16 +261,22 @@ class Decoder(nn.Module):
                 ]
             )
             downsample = (
-                Downsample1D(output_channel) if not is_last else nn.Conv1d(output_channel, output_channel, 3, padding=1)
+                Downsample1D(output_channel)
+                if not is_last
+                else nn.Conv1d(output_channel, output_channel, 3, padding=1)
             )
 
-            self.down_blocks.append(nn.ModuleList([resnet, transformer_blocks, downsample]))
+            self.down_blocks.append(
+                nn.ModuleList([resnet, transformer_blocks, downsample])
+            )
 
         for i in range(num_mid_blocks):
             input_channel = channels[-1]
             out_channels = channels[-1]
 
-            resnet = ResnetBlock1D(dim=input_channel, dim_out=output_channel, time_emb_dim=time_embed_dim)
+            resnet = ResnetBlock1D(
+                dim=input_channel, dim_out=output_channel, time_emb_dim=time_embed_dim
+            )
 
             transformer_blocks = nn.ModuleList(
                 [
@@ -389,11 +406,10 @@ class Decoder(nn.Module):
 
         hiddens = []
         masks = [mask]
-        for resnet, transformer_blocks, downsample in self.down_blocks:
-            mask_down = masks[-1]
-            x = resnet(x, mask_down, t)
+        for resnet, transformer_blocks, downsample in self.down_blocks: # pyright: ignore[reportGeneralTypeIssues]
+            x = resnet(x, mask_down, t) # pyright: ignore[reportPossiblyUnboundVariable]  # noqa: F821
             x = rearrange(x, "b c t -> b t c")
-            mask_down = rearrange(mask_down, "b 1 t -> b t")
+            mask_down = rearrange(mask_down, "b 1 t -> b t") # pyright: ignore[reportUnboundVariable]  # noqa: F821
             for transformer_block in transformer_blocks:
                 x = transformer_block(
                     hidden_states=x,
@@ -409,7 +425,7 @@ class Decoder(nn.Module):
         masks = masks[:-1]
         mask_mid = masks[-1]
 
-        for resnet, transformer_blocks in self.mid_blocks:
+        for resnet, transformer_blocks in self.mid_blocks: # pyright: ignore[reportGeneralTypeIssues]
             x = resnet(x, mask_mid, t)
             x = rearrange(x, "b c t -> b t c")
             mask_mid = rearrange(mask_mid, "b 1 t -> b t")
@@ -422,7 +438,7 @@ class Decoder(nn.Module):
             x = rearrange(x, "b t c -> b c t")
             mask_mid = rearrange(mask_mid, "b t -> b 1 t")
 
-        for resnet, transformer_blocks, upsample in self.up_blocks:
+        for resnet, transformer_blocks, upsample in self.up_blocks: # pyright: ignore[reportGeneralTypeIssues]
             mask_up = masks.pop()
             x = resnet(pack([x, hiddens.pop()], "b * t")[0], mask_up, t)
             x = rearrange(x, "b c t -> b t c")
@@ -437,7 +453,7 @@ class Decoder(nn.Module):
             mask_up = rearrange(mask_up, "b t -> b 1 t")
             x = upsample(x * mask_up)
 
-        x = self.final_block(x, mask_up)
-        output = self.final_proj(x * mask_up)
+        x = self.final_block(x, mask_up) # pyright: ignore[reportPossiblyUnboundVariable]
+        output = self.final_proj(x * mask_up) # pyright: ignore[reportPossiblyUnboundVariable]
 
         return output * mask

@@ -1,5 +1,8 @@
 {
-    "python.defaultInterpreterPath": ".venv/bin/python",
+    // Linux
+    // "python.defaultInterpreterPath": ".venv/bin/python",
+    // Windows
+    "python.defaultInterpreterPath": ".venv\\Scripts\\python.exe",
     "files.exclude": {
         "**/.git": true,
         "**/.svn": true,

@@ -12,9 +12,11 @@ model = ChatterboxVC.from_pretrained(DEVICE)
 # 'ipex.optimize' fuses kernels (like Linear+ReLU) into single GPU calls
 model = ipex.optimize(model, dtype=torch.float16)
 
+
 def generate(audio, target_voice_path):
     wav = model.generate(
-        audio, target_voice_path=target_voice_path,
+        audio,
+        target_voice_path=target_voice_path,
     )
     return model.sr, wav.squeeze(0).numpy()
 
@@ -22,8 +24,15 @@ def generate(audio, target_voice_path):
 demo = gr.Interface(
     generate,
     [
-        gr.Audio(sources=["upload", "microphone"], type="filepath", label="Input audio file"),
-        gr.Audio(sources=["upload", "microphone"], type="filepath", label="Target voice audio file (if none, the default voice is used)", value=None),
+        gr.Audio(
+            sources=["upload", "microphone"], type="filepath", label="Input audio file"
+        ),
+        gr.Audio(
+            sources=["upload", "microphone"],
+            type="filepath",
+            label="Target voice audio file (if none, the default voice is used)",
+            value=None,
+        ),
     ],
     "audio",
 )

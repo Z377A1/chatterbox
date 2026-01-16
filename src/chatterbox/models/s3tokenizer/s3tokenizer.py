@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Tuple, TYPE_CHECKING
 
 import numpy as np
 import librosa
@@ -9,6 +9,9 @@ from s3tokenizer.model_v2 import (
     S3TokenizerV2,
     ModelConfig,
 )
+
+if TYPE_CHECKING:
+    from accelerate import Accelerator  # pyright: ignore[reportMissingImports]
 
 
 # Sampling rate of the inputs to S3TokenizerV2
@@ -30,16 +33,14 @@ class S3Tokenizer(S3TokenizerV2):
 
     def __init__(
         self,
-        name: str="speech_tokenizer_v2_25hz",
-        config: ModelConfig = ModelConfig()
+        name: str = "speech_tokenizer_v2_25hz",
+        config: ModelConfig = ModelConfig(),
     ):
         super().__init__(name)
 
         self.n_fft = 400
         _mel_filters = librosa.filters.mel(
-            sr=S3_SR,
-            n_fft=self.n_fft,
-            n_mels=config.n_mels
+            sr=S3_SR, n_fft=self.n_fft, n_mels=config.n_mels
         )
         self.register_buffer(
             "_mel_filters",
@@ -67,10 +68,7 @@ class S3Tokenizer(S3TokenizerV2):
             intended_wav_len = n_tokens * (sr / S3_TOKEN_RATE)
             intended_wav_len = int(intended_wav_len)
             wav = torch.nn.functional.pad(
-                wav,
-                (0, intended_wav_len - wav.shape[-1]),
-                mode="constant",
-                value=0
+                wav, (0, intended_wav_len - wav.shape[-1]), mode="constant", value=0
             )
             processed_wavs.append(wav)
         return processed_wavs
@@ -88,11 +86,11 @@ class S3Tokenizer(S3TokenizerV2):
         return processed_wavs
 
     @torch.no_grad()
-    def forward(
+    def forward( # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         wavs: torch.Tensor,
-        accelerator: 'Accelerator'=None,
-        max_len: int=None,
+        accelerator: "Accelerator | None" = None,
+        max_len: int = None, # pyright: ignore[reportArgumentType]
     ) -> Tuple[torch.Tensor, torch.LongTensor]:
         """
         NOTE: mel-spec has a hop size of 160 points (100 frame/sec).
@@ -110,7 +108,7 @@ class S3Tokenizer(S3TokenizerV2):
             wav = wav.to(self.device)
             mel = self.log_mel_spectrogram(wav)  # [B=1, F, T]
             if max_len is not None:
-                mel = mel[..., :max_len * 4]  # num_mel_frames = 4 * num_tokens
+                mel = mel[..., : max_len * 4]  # num_mel_frames = 4 * num_tokens
             mels.append(mel.squeeze(0))
 
         mels, mel_lens = padding(mels)
@@ -119,11 +117,13 @@ class S3Tokenizer(S3TokenizerV2):
         else:
             tokenizer = accelerator.unwrap_model(self)
 
-        speech_tokens, speech_token_lens = tokenizer.quantize(mels, mel_lens.to(self.device))
-        return (
-            speech_tokens.long().detach(),
-            speech_token_lens.long().detach(),
+        speech_tokens, speech_token_lens = tokenizer.quantize(
+            mels, mel_lens.to(self.device)
         )
+        return (
+            torch.Tensor, speech_tokens.long().detach(),
+            torch.LongTensor, speech_token_lens.long().detach(),
+        ) # pyright: ignore[reportReturnType]
 
     def log_mel_spectrogram(
         self,
@@ -153,12 +153,16 @@ class S3Tokenizer(S3TokenizerV2):
         audio = audio.to(self.device)
         if padding > 0:
             audio = F.pad(audio, (0, padding))
+
         stft = torch.stft(
-            audio, self.n_fft, S3_HOP,
-            window=self.window.to(self.device),
-            return_complex=True
+            audio,
+            self.n_fft,
+            S3_HOP,
+            window=self.window.to(self.device), # pyright: ignore[reportArgumentType]
+            return_complex=True,
         )
-        magnitudes = stft[..., :-1].abs()**2
+
+        magnitudes = stft[..., :-1].abs() ** 2
 
         mel_spec = self._mel_filters.to(self.device) @ magnitudes
 

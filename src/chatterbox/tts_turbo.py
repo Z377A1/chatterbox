@@ -14,13 +14,14 @@ from transformers import AutoTokenizer
 
 from .models.t3 import T3
 from .models.s3tokenizer import S3_SR
-from .models.s3gen import S3GEN_SR, S3Gen
+from .models.s3gen import S3GEN_SR, S3Token2Wav
 from .models.tokenizers import EnTokenizer
 from .models.voice_encoder import VoiceEncoder
 from .models.t3.modules.cond_enc import T3Cond
 from .models.t3.modules.t3_config import T3Config
 from .models.s3gen.const import S3GEN_SIL
 import logging
+
 logger = logging.getLogger(__name__)
 
 REPO_ID = "ResembleAI/chatterbox-turbo"
@@ -28,8 +29,8 @@ REPO_ID = "ResembleAI/chatterbox-turbo"
 
 def punc_norm(text: str) -> str:
     """
-        Quick cleanup func for punctuation from LLMs or
-        containing chars not seen often in the dataset
+    Quick cleanup func for punctuation from LLMs or
+    containing chars not seen often in the dataset
     """
     if len(text) == 0:
         return "You need to add some text for me to talk."
@@ -48,8 +49,8 @@ def punc_norm(text: str) -> str:
         ("—", "-"),
         ("–", "-"),
         (" ,", ","),
-        ("“", "\""),
-        ("”", "\""),
+        ("“", '"'),
+        ("”", '"'),
         ("‘", "'"),
         ("’", "'"),
     ]
@@ -82,6 +83,7 @@ class Conditionals:
         - prompt_feat_len
         - embedding
     """
+
     t3: T3Cond
     gen: dict
 
@@ -93,10 +95,7 @@ class Conditionals:
         return self
 
     def save(self, fpath: Path):
-        arg_dict = dict(
-            t3=self.t3.__dict__,
-            gen=self.gen
-        )
+        arg_dict = dict(t3=self.t3.__dict__, gen=self.gen)
         torch.save(arg_dict, fpath)
 
     @classmethod
@@ -104,7 +103,7 @@ class Conditionals:
         if isinstance(map_location, str):
             map_location = torch.device(map_location)
         kwargs = torch.load(fpath, map_location=map_location, weights_only=True)
-        return cls(T3Cond(**kwargs['t3']), kwargs['gen'])
+        return cls(T3Cond(**kwargs["t3"]), kwargs["gen"])
 
 
 class ChatterboxTurboTTS:
@@ -114,11 +113,11 @@ class ChatterboxTurboTTS:
     def __init__(
         self,
         t3: T3,
-        s3gen: S3Gen,
+        s3gen: S3Token2Wav,
         ve: VoiceEncoder,
         tokenizer: EnTokenizer,
         device: str,
-        conds: Conditionals = None,
+        conds: Conditionals | None = None,
     ):
         self.sr = S3GEN_SR  # sample rate of synthesized audio
         self.t3 = t3
@@ -130,26 +129,24 @@ class ChatterboxTurboTTS:
         self.watermarker = PerthImplicitWatermarker()
 
     @classmethod
-    def from_local(cls, ckpt_dir, device) -> 'ChatterboxTurboTTS':
+    def from_local(cls, ckpt_dir, device) -> "ChatterboxTurboTTS":
         ckpt_dir = Path(ckpt_dir)
 
         # Always load to CPU first for non-CUDA devices to handle CUDA-saved models
         if device in ["cpu", "mps", "xpu"]:
-            map_location = torch.device('cpu')
+            map_location = torch.device("cpu")
         else:
             map_location = None
 
         ve = VoiceEncoder()
-        ve.load_state_dict(
-            load_file(ckpt_dir / "ve.safetensors")
-        )
+        ve.load_state_dict(load_file(ckpt_dir / "ve.safetensors"))
         ve.to(device).eval()
 
         # Turbo specific hp
         hp = T3Config(text_tokens_dict_size=50276)
         hp.llama_config_name = "GPT2_medium"
         hp.speech_tokens_dict_size = 6563
-        hp.input_pos_emb = None
+        hp.input_pos_emb = None # pyright: ignore[reportAttributeAccessIssue]
         hp.speech_cond_prompt_len = 375
         hp.use_perceiver_resampler = False
         hp.emotion_adv = False
@@ -158,15 +155,13 @@ class ChatterboxTurboTTS:
         t3_state = load_file(ckpt_dir / "t3_turbo_v1.safetensors")
         if "model" in t3_state.keys():
             t3_state = t3_state["model"][0]
-        t3.load_state_dict(t3_state)
+        t3.load_state_dict(t3_state) # pyright: ignore[reportArgumentType]
         del t3.tfmr.wte
         t3.to(device).eval()
 
-        s3gen = S3Gen(meanflow=True)
+        s3gen = S3Token2Wav(meanflow=True)
         weights = load_file(ckpt_dir / "s3gen_meanflow.safetensors")
-        s3gen.load_state_dict(
-            weights, strict=True
-        )
+        s3gen.load_state_dict(weights, strict=True)
         s3gen.to(device).eval()
 
         tokenizer = AutoTokenizer.from_pretrained(ckpt_dir)
@@ -178,25 +173,31 @@ class ChatterboxTurboTTS:
         conds = None
         builtin_voice = ckpt_dir / "conds.pt"
         if builtin_voice.exists():
-            conds = Conditionals.load(builtin_voice, map_location=map_location).to(device)
+            conds = Conditionals.load(builtin_voice, map_location=map_location).to( # pyright: ignore[reportArgumentType]
+                device
+            )
 
         return cls(t3, s3gen, ve, tokenizer, device, conds=conds)
 
     @classmethod
-    def from_pretrained(cls, device) -> 'ChatterboxTurboTTS':
+    def from_pretrained(cls, device) -> "ChatterboxTurboTTS":
         # Check if MPS is available on macOS
         if device == "mps" and not torch.backends.mps.is_available():
             if not torch.backends.mps.is_built():
-                print("MPS not available because the current PyTorch install was not built with MPS enabled.")
+                print(
+                    "MPS not available because the current PyTorch install was not built with MPS enabled."
+                )
             else:
-                print("MPS not available because the current MacOS version is not 12.3+ and/or you do not have an MPS-enabled device on this machine.")
+                print(
+                    "MPS not available because the current MacOS version is not 12.3+ and/or you do not have an MPS-enabled device on this machine."
+                )
             device = "cpu"
 
         local_path = snapshot_download(
             repo_id=REPO_ID,
             token=os.getenv("HF_TOKEN") or True,
             # Optional: Filter to download only what you need
-            allow_patterns=["*.safetensors", "*.json", "*.txt", "*.pt", "*.model"]
+            allow_patterns=["*.safetensors", "*.json", "*.txt", "*.pt", "*.model"],
         )
 
         return cls.from_local(local_path, device)
@@ -218,29 +219,39 @@ class ChatterboxTurboTTS:
         ## Load and norm reference wav
         s3gen_ref_wav, _sr = librosa.load(wav_fpath, sr=S3GEN_SR)
 
-        assert len(s3gen_ref_wav) / _sr > 5.0, "Audio prompt must be longer than 5 seconds!"
+        assert len(s3gen_ref_wav) / _sr > 5.0, (
+            "Audio prompt must be longer than 5 seconds!"
+        )
 
         if norm_loudness:
             s3gen_ref_wav = self.norm_loudness(s3gen_ref_wav, _sr)
 
         ref_16k_wav = librosa.resample(s3gen_ref_wav, orig_sr=S3GEN_SR, target_sr=S3_SR)
 
-        s3gen_ref_wav = s3gen_ref_wav[:self.DEC_COND_LEN]
-        s3gen_ref_dict = self.s3gen.embed_ref(s3gen_ref_wav, S3GEN_SR, device=self.device)
+        s3gen_ref_wav = s3gen_ref_wav[: self.DEC_COND_LEN]
+        s3gen_ref_dict = self.s3gen.embed_ref(
+            s3gen_ref_wav, S3GEN_SR, device=self.device # pyright: ignore[reportArgumentType]
+        )
 
         # Speech cond prompt tokens
         if plen := self.t3.hp.speech_cond_prompt_len:
             s3_tokzr = self.s3gen.tokenizer
-            t3_cond_prompt_tokens, _ = s3_tokzr.forward([ref_16k_wav[:self.ENC_COND_LEN]], max_len=plen)
-            t3_cond_prompt_tokens = torch.atleast_2d(t3_cond_prompt_tokens).to(self.device)
+            t3_cond_prompt_tokens, _ = s3_tokzr.forward(
+                [ref_16k_wav[: self.ENC_COND_LEN]], max_len=plen # pyright: ignore[reportArgumentType]
+            )
+            t3_cond_prompt_tokens = torch.atleast_2d(t3_cond_prompt_tokens).to(
+                self.device
+            )
 
         # Voice-encoder speaker embedding
-        ve_embed = torch.from_numpy(self.ve.embeds_from_wavs([ref_16k_wav], sample_rate=S3_SR))
-        ve_embed = ve_embed.mean(axis=0, keepdim=True).to(self.device)
+        ve_embed = torch.from_numpy(
+            self.ve.embeds_from_wavs([ref_16k_wav], sample_rate=S3_SR)
+        )
+        ve_embed = ve_embed.mean(axis=0, keepdim=True).to(self.device) # pyright: ignore[reportCallIssue]
 
         t3_cond = T3Cond(
             speaker_emb=ve_embed,
-            cond_prompt_speech_tokens=t3_cond_prompt_tokens,
+            cond_prompt_speech_tokens=t3_cond_prompt_tokens, # pyright: ignore[reportPossiblyUnboundVariable]
             emotion_adv=exaggeration * torch.ones(1, 1, 1),
         ).to(device=self.device)
         self.conds = Conditionals(t3_cond, s3gen_ref_dict)
@@ -259,20 +270,30 @@ class ChatterboxTurboTTS:
         norm_loudness=True,
     ):
         if audio_prompt_path:
-            self.prepare_conditionals(audio_prompt_path, exaggeration=exaggeration, norm_loudness=norm_loudness)
+            self.prepare_conditionals(
+                audio_prompt_path,
+                exaggeration=exaggeration,
+                norm_loudness=norm_loudness,
+            )
         else:
-            assert self.conds is not None, "Please `prepare_conditionals` first or specify `audio_prompt_path`"
+            assert self.conds is not None, (
+                "Please `prepare_conditionals` first or specify `audio_prompt_path`"
+            )
 
         if cfg_weight > 0.0 or exaggeration > 0.0 or min_p > 0.0:
-            logger.warning("CFG, min_p and exaggeration are not supported by Turbo version and will be ignored.")
+            logger.warning(
+                "CFG, min_p and exaggeration are not supported by Turbo version and will be ignored."
+            )
 
         # Norm and tokenize text
         text = punc_norm(text)
-        text_tokens = self.tokenizer(text, return_tensors="pt", padding=True, truncation=True)
+        text_tokens = self.tokenizer( # pyright: ignore[reportCallIssue]
+            text, return_tensors="pt", padding=True, truncation=True
+        )
         text_tokens = text_tokens.input_ids.to(self.device)
 
         speech_tokens = self.t3.inference_turbo(
-            t3_cond=self.conds.t3,
+            t3_cond=self.conds.t3, # pyright: ignore[reportOptionalMemberAccess]
             text_tokens=text_tokens,
             temperature=temperature,
             top_k=top_k,
@@ -288,7 +309,7 @@ class ChatterboxTurboTTS:
 
         wav, _ = self.s3gen.inference(
             speech_tokens=speech_tokens,
-            ref_dict=self.conds.gen,
+            ref_dict=self.conds.gen, # pyright: ignore[reportOptionalMemberAccess]
             n_cfm_timesteps=2,
         )
         wav = wav.squeeze(0).detach().cpu().numpy()

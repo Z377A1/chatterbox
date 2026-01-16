@@ -19,7 +19,7 @@ class T3Cond:
     clap_emb: Optional[Tensor] = None
     cond_prompt_speech_tokens: Optional[Tensor] = None
     cond_prompt_speech_emb: Optional[Tensor] = None
-    emotion_adv: Optional[Tensor] = 0.5
+    emotion_adv: Optional[Tensor | float] = 0.5
 
     def to(self, *, device=None, dtype=None):
         "Cast to a device and dtype. Dtype casting is ignored for long/int tensors."
@@ -63,11 +63,14 @@ class T3CondEnc(nn.Module):
 
     def forward(self, cond: T3Cond):
         # Validate
-        assert (cond.cond_prompt_speech_tokens is None) == (cond.cond_prompt_speech_emb is None), \
-            "no embeddings for cond_prompt_speech_tokens"
+        assert (cond.cond_prompt_speech_tokens is None) == (
+            cond.cond_prompt_speech_emb is None
+        ), "no embeddings for cond_prompt_speech_tokens"
 
         # Speaker embedding projection
-        cond_spkr = self.spkr_enc(cond.speaker_emb.view(-1, self.hp.speaker_embed_size))[:, None]  # (B, 1, dim)
+        cond_spkr = self.spkr_enc(
+            cond.speaker_emb.view(-1, self.hp.speaker_embed_size)
+        )[:, None]  # (B, 1, dim)
         empty = torch.zeros_like(cond_spkr[:, :0])  # (B, 0, dim)
 
         # TODO CLAP
@@ -79,19 +82,22 @@ class T3CondEnc(nn.Module):
         if cond_prompt_speech_emb is None:
             cond_prompt_speech_emb = empty  # (B, 0, dim)
         elif self.hp.use_perceiver_resampler:
-            cond_prompt_speech_emb = self.perceiver(cond_prompt_speech_emb)
+            cond_prompt_speech_emb = self.perceiver(cond_prompt_speech_emb) # pyright: ignore[reportOptionalCall]
 
         # Emotion Adv: must provide a value if this model uses emotion conditioning
         cond_emotion_adv = empty  # (B, 0, dim)
         if self.hp.emotion_adv:
             assert cond.emotion_adv is not None
-            cond_emotion_adv = self.emotion_adv_fc(cond.emotion_adv.view(-1, 1, 1))
+            cond_emotion_adv = self.emotion_adv_fc(cond.emotion_adv.view(-1, 1, 1)) # pyright: ignore[reportOptionalCall, reportAttributeAccessIssue]
 
         # Concat and return
-        cond_embeds = torch.cat((
-            cond_spkr,
-            cond_clap,
-            cond_prompt_speech_emb,
-            cond_emotion_adv,
-        ), dim=1)
+        cond_embeds = torch.cat(
+            (
+                cond_spkr,
+                cond_clap,
+                cond_prompt_speech_emb,
+                cond_emotion_adv,
+            ),
+            dim=1,
+        )
         return cond_embeds

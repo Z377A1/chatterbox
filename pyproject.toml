@@ -15,7 +15,6 @@ dependencies = [
     "s3tokenizer",
     "torch==2.6.0+xpu",
     "torchaudio==2.6.0+xpu",
-    "intel-extension-for-pytorch==2.6.10+xpu",
     "transformers==4.46.3",
     "diffusers==0.29.0",
     "resemble-perth==1.0.1",
@@ -25,7 +24,8 @@ dependencies = [
     "pykakasi==2.3.0",
     "gradio==5.44.1",
     "pyloudnorm",
-    "omegaconf"
+    "omegaconf",
+    "setuptools<81",
 ]
 
 [project.urls]
@@ -42,11 +42,10 @@ where = ["src"]
 [tool.uv]
 override-dependencies = [
     "intel-sycl-rt==2025.0.4",
-    "intel-openmp==2025.0.4",
     "intel-cmplr-lic-rt==2025.0.4",
     "intel-cmplr-lib-ur==2025.0.4",
     "intel-cmplr-lib-rt==2025.0.4",
-    "pytorch-triton-xpu==3.2.0"
+    "pytorch-triton-xpu==3.5.0",
 ]
 
 [[tool.uv.index]]

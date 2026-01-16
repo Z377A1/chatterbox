@@ -3,15 +3,15 @@ from typing import Any, Dict, Optional
 import torch
 import torch.nn as nn
 from diffusers.models.attention import (
-    GEGLU,
-    GELU,
-    AdaLayerNorm,
-    AdaLayerNormZero,
-    ApproximateGELU,
+    GEGLU, # pyright: ignore[reportPrivateImportUsage]
+    GELU, # pyright: ignore[reportPrivateImportUsage]
+    AdaLayerNorm, # pyright: ignore[reportPrivateImportUsage]
+    AdaLayerNormZero, # pyright: ignore[reportPrivateImportUsage]
+    ApproximateGELU, # pyright: ignore[reportPrivateImportUsage]
 )
 from diffusers.models.attention_processor import Attention
 from diffusers.models.lora import LoRACompatibleLinear
-from diffusers.utils.torch_utils import maybe_allow_in_graph
+from diffusers.utils.torch_utils import maybe_allow_in_graph # pyright: ignore[reportPrivateImportUsage]
 
 
 class SnakeBeta(nn.Module):
@@ -32,7 +32,14 @@ class SnakeBeta(nn.Module):
         >>> x = a1(x)
     """
 
-    def __init__(self, in_features, out_features, alpha=1.0, alpha_trainable=True, alpha_logscale=True):
+    def __init__(
+        self,
+        in_features,
+        out_features,
+        alpha=1.0,
+        alpha_trainable=True,
+        alpha_logscale=True,
+    ):
         """
         Initialization.
         INPUT:
@@ -44,7 +51,9 @@ class SnakeBeta(nn.Module):
             alpha will be trained along with the rest of your model.
         """
         super().__init__()
-        self.in_features = out_features if isinstance(out_features, list) else [out_features]
+        self.in_features = (
+            out_features if isinstance(out_features, list) else [out_features]
+        )
         self.proj = LoRACompatibleLinear(in_features, out_features)
 
         # initialize alpha
@@ -75,7 +84,9 @@ class SnakeBeta(nn.Module):
             alpha = self.alpha
             beta = self.beta
 
-        x = x + (1.0 / (beta + self.no_div_by_zero)) * torch.pow(torch.sin(x * alpha), 2)
+        x = x + (1.0 / (beta + self.no_div_by_zero)) * torch.pow(
+            torch.sin(x * alpha), 2
+        )
 
         return x
 
@@ -119,7 +130,7 @@ class FeedForward(nn.Module):
 
         self.net = nn.ModuleList([])
         # project in
-        self.net.append(act_fn)
+        self.net.append(act_fn) # pyright: ignore[reportPossiblyUnboundVariable]
         # project dropout
         self.net.append(nn.Dropout(dropout))
         # project out
@@ -176,8 +187,12 @@ class BasicTransformerBlock(nn.Module):
         super().__init__()
         self.only_cross_attention = only_cross_attention
 
-        self.use_ada_layer_norm_zero = (num_embeds_ada_norm is not None) and norm_type == "ada_norm_zero"
-        self.use_ada_layer_norm = (num_embeds_ada_norm is not None) and norm_type == "ada_norm"
+        self.use_ada_layer_norm_zero = (
+            num_embeds_ada_norm is not None
+        ) and norm_type == "ada_norm_zero"
+        self.use_ada_layer_norm = (
+            num_embeds_ada_norm is not None
+        ) and norm_type == "ada_norm"
 
         if norm_type in ("ada_norm", "ada_norm_zero") and num_embeds_ada_norm is None:
             raise ValueError(
@@ -188,7 +203,7 @@ class BasicTransformerBlock(nn.Module):
         # Define 3 blocks. Each block has its own normalization layer.
         # 1. Self-Attn
         if self.use_ada_layer_norm:
-            self.norm1 = AdaLayerNorm(dim, num_embeds_ada_norm)
+            self.norm1 = AdaLayerNorm(dim, num_embeds_ada_norm) # pyright: ignore[reportArgumentType]
         elif self.use_ada_layer_norm_zero:
             self.norm1 = AdaLayerNormZero(dim, num_embeds_ada_norm)
         else:
@@ -209,13 +224,15 @@ class BasicTransformerBlock(nn.Module):
             # I.e. the number of returned modulation chunks from AdaLayerZero would not make sense if returned during
             # the second cross attention block.
             self.norm2 = (
-                AdaLayerNorm(dim, num_embeds_ada_norm)
+                AdaLayerNorm(dim, num_embeds_ada_norm) # pyright: ignore[reportArgumentType]
                 if self.use_ada_layer_norm
                 else nn.LayerNorm(dim, elementwise_affine=norm_elementwise_affine)
             )
             self.attn2 = Attention(
                 query_dim=dim,
-                cross_attention_dim=cross_attention_dim if not double_self_attention else None,
+                cross_attention_dim=cross_attention_dim
+                if not double_self_attention
+                else None,
                 heads=num_attention_heads,
                 dim_head=attention_head_dim,
                 dropout=dropout,
@@ -229,7 +246,12 @@ class BasicTransformerBlock(nn.Module):
 
         # 3. Feed-forward
         self.norm3 = nn.LayerNorm(dim, elementwise_affine=norm_elementwise_affine)
-        self.ff = FeedForward(dim, dropout=dropout, activation_fn=activation_fn, final_dropout=final_dropout)
+        self.ff = FeedForward(
+            dim,
+            dropout=dropout,
+            activation_fn=activation_fn,
+            final_dropout=final_dropout,
+        )
 
         # let chunk size default to None
         self._chunk_size = None
@@ -247,7 +269,7 @@ class BasicTransformerBlock(nn.Module):
         encoder_hidden_states: Optional[torch.FloatTensor] = None,
         encoder_attention_mask: Optional[torch.FloatTensor] = None,
         timestep: Optional[torch.LongTensor] = None,
-        cross_attention_kwargs: Dict[str, Any] = None,
+        cross_attention_kwargs: Dict[str, Any] = None, # pyright: ignore[reportArgumentType]
         class_labels: Optional[torch.LongTensor] = None,
     ):
         # Notice that normalization is always applied before the real computation in the following blocks.
@@ -261,22 +283,30 @@ class BasicTransformerBlock(nn.Module):
         else:
             norm_hidden_states = self.norm1(hidden_states)
 
-        cross_attention_kwargs = cross_attention_kwargs if cross_attention_kwargs is not None else {}
+        cross_attention_kwargs = (
+            cross_attention_kwargs if cross_attention_kwargs is not None else {}
+        )
 
         attn_output = self.attn1(
             norm_hidden_states,
-            encoder_hidden_states=encoder_hidden_states if self.only_cross_attention else None,
-            attention_mask=encoder_attention_mask if self.only_cross_attention else attention_mask,
+            encoder_hidden_states=encoder_hidden_states
+            if self.only_cross_attention
+            else None,
+            attention_mask=encoder_attention_mask
+            if self.only_cross_attention
+            else attention_mask,
             **cross_attention_kwargs,
         )
         if self.use_ada_layer_norm_zero:
-            attn_output = gate_msa.unsqueeze(1) * attn_output
+            attn_output = gate_msa.unsqueeze(1) * attn_output # pyright: ignore[reportPossiblyUnboundVariable]
         hidden_states = attn_output + hidden_states
 
         # 2. Cross-Attention
         if self.attn2 is not None:
             norm_hidden_states = (
-                self.norm2(hidden_states, timestep) if self.use_ada_layer_norm else self.norm2(hidden_states)
+                self.norm2(hidden_states, timestep) # pyright: ignore[reportOptionalCall]
+                if self.use_ada_layer_norm
+                else self.norm2(hidden_states) # pyright: ignore[reportOptionalCall]
             )
 
             attn_output = self.attn2(
@@ -291,7 +321,9 @@ class BasicTransformerBlock(nn.Module):
         norm_hidden_states = self.norm3(hidden_states)
 
         if self.use_ada_layer_norm_zero:
-            norm_hidden_states = norm_hidden_states * (1 + scale_mlp[:, None]) + shift_mlp[:, None]
+            norm_hidden_states = (
+                norm_hidden_states * (1 + scale_mlp[:, None]) + shift_mlp[:, None] # pyright: ignore[reportPossiblyUnboundVariable]
+            )
 
         if self._chunk_size is not None:
             # "feed_forward_chunk_size" can be used to save memory
@@ -302,15 +334,20 @@ class BasicTransformerBlock(nn.Module):
 
             num_chunks = norm_hidden_states.shape[self._chunk_dim] // self._chunk_size
             ff_output = torch.cat(
-                [self.ff(hid_slice) for hid_slice in norm_hidden_states.chunk(num_chunks, dim=self._chunk_dim)],
+                [
+                    self.ff(hid_slice)
+                    for hid_slice in norm_hidden_states.chunk(
+                        num_chunks, dim=self._chunk_dim
+                    )
+                ],
                 dim=self._chunk_dim,
             )
         else:
             ff_output = self.ff(norm_hidden_states)
 
         if self.use_ada_layer_norm_zero:
-            ff_output = gate_mlp.unsqueeze(1) * ff_output
+            ff_output = gate_mlp.unsqueeze(1) * ff_output # pyright: ignore[reportPossiblyUnboundVariable]
 
-        hidden_states = ff_output + hidden_states
+        hidden_states = ff_output + hidden_states # pyright: ignore[reportAssignmentType]
 
         return hidden_states
