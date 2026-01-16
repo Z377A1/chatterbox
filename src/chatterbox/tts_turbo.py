@@ -5,7 +5,7 @@ from pathlib import Path
 
 import librosa
 import torch
-import perth
+from perth.perth_net import PerthImplicitWatermarker
 import pyloudnorm as ln
 
 from safetensors.torch import load_file
@@ -127,7 +127,7 @@ class ChatterboxTurboTTS:
         self.tokenizer = tokenizer
         self.device = device
         self.conds = conds
-        self.watermarker = perth.PerthImplicitWatermarker()
+        self.watermarker = PerthImplicitWatermarker()
 
     @classmethod
     def from_local(cls, ckpt_dir, device) -> 'ChatterboxTurboTTS':
