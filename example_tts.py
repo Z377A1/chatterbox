@@ -4,8 +4,8 @@ from chatterbox.tts import ChatterboxTTS
 from chatterbox.mtl_tts import ChatterboxMultilingualTTS
 
 # Automatically detect the best available device
-if torch.cuda.is_available():
-    device = "cuda"
+if torch.xpu.is_available():
+    device = "xpu"
 elif torch.backends.mps.is_available():
     device = "mps"
 else:
@@ -15,11 +15,17 @@ print(f"Using device: {device}")
 
 model = ChatterboxTTS.from_pretrained(device=device)
 
+if device == "xpu":
+    import intel_extension_for_pytorch as ipex
+    # Intel XPU Optimization
+    # 'ipex.optimize' fuses kernels (like Linear+ReLU) into single GPU calls
+    model = ipex.optimize(model, dtype=torch.float16)
+
 text = "Ezreal and Jinx teamed up with Ahri, Yasuo, and Teemo to take down the enemy's Nexus in an epic late-game pentakill."
 wav = model.generate(text)
 ta.save("test-1.wav", wav, model.sr)
 
-multilingual_model = ChatterboxMultilingualTTS.from_pretrained(device=device)
+multilingual_model = ChatterboxMultilingualTTS.from_pretrained(device=torch.device(device))
 text = "Bonjour, comment ça va? Ceci est le modèle de synthèse vocale multilingue Chatterbox, il prend en charge 23 langues."
 wav = multilingual_model.generate(text, language_id="fr")
 ta.save("test-2.wav", wav, multilingual_model.sr)

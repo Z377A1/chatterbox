@@ -34,7 +34,7 @@ def subsequent_mask(
 
     Args:
         size (int): size of mask
-        str device (str): "cpu" or "cuda" or torch.Tensor.device
+        str device (str): "cpu" or "xpu" or torch.Tensor.device
         dtype (torch.device): result dtype
 
     Returns:
@@ -66,7 +66,7 @@ def subsequent_chunk_mask(
         num_left_chunks (int): number of left chunks
             <0: use full chunk
             >=0: use num_left_chunks
-        device (torch.device): "cpu" or "cuda" or torch.Tensor.device
+        device (torch.device): "cpu" or "xpu" or torch.Tensor.device
 
     Returns:
         torch.Tensor: mask

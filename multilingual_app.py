@@ -4,7 +4,7 @@ import torch
 from chatterbox.mtl_tts import ChatterboxMultilingualTTS, SUPPORTED_LANGUAGES
 import gradio as gr
 
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+DEVICE = "xpu" if torch.xpu.is_available() else "cpu"
 print(f"🚀 Running on device: {DEVICE}")
 
 # --- Global Model Initialization ---
@@ -158,9 +158,9 @@ except Exception as e:
 def set_seed(seed: int):
     """Sets the random seed for reproducibility across torch, numpy, and random."""
     torch.manual_seed(seed)
-    if DEVICE == "cuda":
-        torch.cuda.manual_seed(seed)
-        torch.cuda.manual_seed_all(seed)
+    if DEVICE == "xpu":
+        torch.xpu.manual_seed(seed)
+        torch.xpu.manual_seed_all(seed)
     random.seed(seed)
     np.random.seed(seed)
     

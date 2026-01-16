@@ -133,7 +133,7 @@ class ChatterboxTurboTTS:
     def from_local(cls, ckpt_dir, device) -> 'ChatterboxTurboTTS':
         ckpt_dir = Path(ckpt_dir)
 
-        # Always load to CPU first for non-CUDA devices to handle CUDA-saved models
+        # Always load to CPU first for non-XPU devices to handle XPU-saved models
         if device in ["cpu", "mps"]:
             map_location = torch.device('cpu')
         else:

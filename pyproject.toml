@@ -3,7 +3,8 @@ name = "chatterbox-tts"
 version = "0.1.6"
 description = "Chatterbox: Open Source TTS and Voice Conversion by Resemble AI"
 readme = "README.md"
-requires-python = ">=3.10"
+# requires-python = ">=3.10"
+requires-python = "==3.10.*"
 license = {file = "LICENSE"}
 authors = [
     {name = "resemble-ai", email = "engineering@resemble.ai"}
@@ -12,8 +13,9 @@ dependencies = [
     "numpy>=1.24.0,<1.26.0",
     "librosa==0.11.0",
     "s3tokenizer",
-    "torch==2.6.0",
-    "torchaudio==2.6.0",
+    "torch==2.6.0+xpu",
+    "torchaudio==2.6.0+xpu",
+    "intel-extension-for-pytorch==2.6.10+xpu",
     "transformers==4.46.3",
     "diffusers==0.29.0",
     "resemble-perth==1.0.1",
@@ -36,3 +38,29 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.uv]
+override-dependencies = [
+    "intel-sycl-rt==2025.0.4",
+    "intel-openmp==2025.0.4",
+    "intel-cmplr-lic-rt==2025.0.4",
+    "intel-cmplr-lib-ur==2025.0.4",
+    "intel-cmplr-lib-rt==2025.0.4",
+    "pytorch-triton-xpu==3.2.0"
+]
+
+[[tool.uv.index]]
+name = "pytorch-xpu"
+url = "https://download.pytorch.org/whl/xpu"
+explicit = true
+
+[[tool.uv.index]]
+name = "intel-xpu"
+url = "https://pytorch-extension.intel.com/release-whl/stable/xpu/us/"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-xpu" }
+torchaudio = { index = "pytorch-xpu" }
+pytorch-triton-xpu = { index = "pytorch-xpu" }
+intel-extension-for-pytorch = { index = "intel-xpu" }

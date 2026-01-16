@@ -91,7 +91,7 @@ class AttentionQKV(nn.Module):
 
     def flash_attention(self, q, k, v, mask=None):
         config = self.flash_config if self.flash_config else {}
-        with torch.backends.cuda.sdp_kernel(**config):
+        with torch.backends.xpu.sdp_kernel(**config):
             out = F.scaled_dot_product_attention(
                 q, k, v,
                 attn_mask=mask,

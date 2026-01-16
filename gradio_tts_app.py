@@ -3,21 +3,27 @@ import numpy as np
 import torch
 import gradio as gr
 from chatterbox.tts import ChatterboxTTS
+import intel_extension_for_pytorch as ipex
 
 
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+DEVICE = "xpu" if torch.xpu.is_available() else "cpu"
 
 
 def set_seed(seed: int):
     torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
+    torch.xpu.manual_seed(seed)
+    torch.xpu.manual_seed_all(seed)
     random.seed(seed)
     np.random.seed(seed)
 
 
 def load_model():
     model = ChatterboxTTS.from_pretrained(DEVICE)
+
+    # Intel XPU Optimization
+    # 'ipex.optimize' fuses kernels (like Linear+ReLU) into single GPU calls
+    model = ipex.optimize(model, dtype=torch.float16)
+
     return model
 
 
