@@ -39,8 +39,8 @@ class ChatterboxVC:
     def from_local(cls, ckpt_dir, device) -> 'ChatterboxVC':
         ckpt_dir = Path(ckpt_dir)
         
-        # Always load to CPU first for non-XPU devices to handle XPU-saved models
-        if device in ["cpu", "mps"]:
+        # Always load to CPU first for non-CUDA devices to handle CUDA-saved models
+        if device in ["cpu", "mps", "xpu"]:
             map_location = torch.device('cpu')
         else:
             map_location = None
