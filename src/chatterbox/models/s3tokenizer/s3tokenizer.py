@@ -86,11 +86,11 @@ class S3Tokenizer(S3TokenizerV2):
         return processed_wavs
 
     @torch.no_grad()
-    def forward( # pyright: ignore[reportIncompatibleMethodOverride]
+    def forward(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         wavs: torch.Tensor,
         accelerator: "Accelerator | None" = None,
-        max_len: int = None, # pyright: ignore[reportArgumentType]
+        max_len: int = None,  # pyright: ignore[reportArgumentType]
     ) -> Tuple[torch.Tensor, torch.LongTensor]:
         """
         NOTE: mel-spec has a hop size of 160 points (100 frame/sec).
@@ -121,9 +121,11 @@ class S3Tokenizer(S3TokenizerV2):
             mels, mel_lens.to(self.device)
         )
         return (
-            torch.Tensor, speech_tokens.long().detach(),
-            torch.LongTensor, speech_token_lens.long().detach(),
-        ) # pyright: ignore[reportReturnType]
+            torch.Tensor,
+            speech_tokens.long().detach(),
+            torch.LongTensor,
+            speech_token_lens.long().detach(),
+        )  # pyright: ignore[reportReturnType]
 
     def log_mel_spectrogram(
         self,
@@ -158,7 +160,7 @@ class S3Tokenizer(S3TokenizerV2):
             audio,
             self.n_fft,
             S3_HOP,
-            window=self.window.to(self.device), # pyright: ignore[reportArgumentType]
+            window=self.window.to(self.device),  # pyright: ignore[reportArgumentType]
             return_complex=True,
         )
 

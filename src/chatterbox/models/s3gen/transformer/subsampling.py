@@ -29,7 +29,7 @@ class BaseSubsampling(torch.nn.Module):
     def position_encoding(
         self, offset: Union[int, torch.Tensor], size: int
     ) -> torch.Tensor:
-        return self.pos_enc.position_encoding(offset, size) # pyright: ignore[reportAttributeAccessIssue, reportCallIssue]
+        return self.pos_enc.position_encoding(offset, size)  # pyright: ignore[reportAttributeAccessIssue, reportCallIssue]
 
 
 class EmbedinigNoSubsampling(BaseSubsampling):

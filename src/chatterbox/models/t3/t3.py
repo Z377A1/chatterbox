@@ -108,7 +108,7 @@ class T3(nn.Module):
                 t3_cond.cond_prompt_speech_tokens
             )
             if not self.is_gpt:
-                t3_cond.cond_prompt_speech_emb += self.speech_pos_emb( # pyright: ignore[reportOptionalCall]
+                t3_cond.cond_prompt_speech_emb += self.speech_pos_emb(  # pyright: ignore[reportOptionalCall]
                     t3_cond.cond_prompt_speech_tokens
                 )
         return self.cond_enc(t3_cond)  # (B, len_cond, dim)
@@ -166,14 +166,14 @@ class T3(nn.Module):
 
         # backbone tranformer forward
         tfmr_out = self.tfmr.forward(
-            input_ids=None, # pyright: ignore[reportArgumentType]
+            input_ids=None,  # pyright: ignore[reportArgumentType]
             # position_ids=position_ids, # TODO? ROPE should be fine?
-            inputs_embeds=embeds, # pyright: ignore[reportArgumentType]
+            inputs_embeds=embeds,  # pyright: ignore[reportArgumentType]
             output_hidden_states=True,
             return_dict=True,
             use_cache=(not training),
         )
-        hidden_states = tfmr_out.hidden_states[ # pyright: ignore[reportOptionalSubscript, reportAttributeAccessIssue]
+        hidden_states = tfmr_out.hidden_states[  # pyright: ignore[reportOptionalSubscript, reportAttributeAccessIssue]
             -1
         ]  # final tfmr layer output, (B, seq, dim)
 
@@ -230,7 +230,7 @@ class T3(nn.Module):
 
         # Calc CCE losses
         IGNORE_ID = -100
-        device = out.text_logits.device # pyright: ignore[reportAttributeAccessIssue]
+        device = out.text_logits.device  # pyright: ignore[reportAttributeAccessIssue]
         mask_text = (
             torch.arange(len_text, device=device)[None] >= text_token_lens[:, None]
         )  # (B, len_text)
@@ -240,10 +240,14 @@ class T3(nn.Module):
         masked_text = text_tokens.masked_fill(mask_text, IGNORE_ID)
         masked_speech = speech_tokens.masked_fill(mask_speech, IGNORE_ID)
         loss_text = F.cross_entropy(
-            out.text_logits, masked_text, ignore_index=IGNORE_ID # pyright: ignore[reportAttributeAccessIssue]
+            out.text_logits, # pyright: ignore[reportAttributeAccessIssue]
+            masked_text,
+            ignore_index=IGNORE_ID,
         )
         loss_speech = F.cross_entropy(
-            out.speech_logits, masked_speech, ignore_index=IGNORE_ID # pyright: ignore[reportAttributeAccessIssue]
+            out.speech_logits, # pyright: ignore[reportAttributeAccessIssue]
+            masked_speech,
+            ignore_index=IGNORE_ID,
         )
 
         return loss_text, loss_speech
@@ -289,8 +293,8 @@ class T3(nn.Module):
         # Prepare custom input embeds
         embeds, len_cond = self.prepare_input_embeds(
             t3_cond=t3_cond,
-            text_tokens=text_tokens, # pyright: ignore[reportArgumentType]
-            speech_tokens=initial_speech_tokens, # pyright: ignore[reportArgumentType]
+            text_tokens=text_tokens,  # pyright: ignore[reportArgumentType]
+            speech_tokens=initial_speech_tokens,  # pyright: ignore[reportArgumentType]
             cfg_weight=cfg_weight,
         )
 
@@ -315,8 +319,8 @@ class T3(nn.Module):
                 assert alignment_stream_analyzer.eos_idx == self.hp.stop_speech_token
 
             patched_model = T3HuggingfaceBackend(
-                config=self.cfg, # pyright: ignore[reportArgumentType]
-                llama=self.tfmr, # pyright: ignore[reportArgumentType]
+                config=self.cfg,  # pyright: ignore[reportArgumentType]
+                llama=self.tfmr,  # pyright: ignore[reportArgumentType]
                 speech_enc=self.speech_emb,
                 speech_head=self.speech_head,
                 alignment_stream_analyzer=alignment_stream_analyzer,
@@ -347,7 +351,7 @@ class T3(nn.Module):
             [[self.hp.start_speech_token]], dtype=torch.long, device=device
         )
         bos_embed = self.speech_emb(bos_token)  # shape: (B, 1, embed_dim)
-        bos_embed = bos_embed + self.speech_pos_emb.get_fixed_embedding(0) # pyright: ignore[reportOptionalMemberAccess]
+        bos_embed = bos_embed + self.speech_pos_emb.get_fixed_embedding(0)  # pyright: ignore[reportOptionalMemberAccess]
 
         # batch_size=2 for CFG
         bos_embed = torch.cat([bos_embed, bos_embed])
@@ -380,7 +384,7 @@ class T3(nn.Module):
         past = output.past_key_values
 
         # ---- Generation Loop using kv_cache ----
-        for i in tqdm(range(max_new_tokens), desc="Sampling", dynamic_ncols=True): # pyright: ignore[reportArgumentType]
+        for i in tqdm(range(max_new_tokens), desc="Sampling", dynamic_ncols=True):  # pyright: ignore[reportArgumentType]
             logits_step = output.logits[:, -1, :]
             # CFG combine  → (1, V)
             cond = logits_step[0:1, :]
@@ -429,7 +433,7 @@ class T3(nn.Module):
             # Get embedding for the new token.
             next_token_embed = self.speech_emb(next_token)
             next_token_embed = (
-                next_token_embed + self.speech_pos_emb.get_fixed_embedding(i + 1) # pyright: ignore[reportOptionalMemberAccess]
+                next_token_embed + self.speech_pos_emb.get_fixed_embedding(i + 1)  # pyright: ignore[reportOptionalMemberAccess]
             )
 
             #  For CFG
@@ -479,7 +483,7 @@ class T3(nn.Module):
         embeds, _ = self.prepare_input_embeds(
             t3_cond=t3_cond,
             text_tokens=text_tokens,
-            speech_tokens=speech_start_token, # pyright: ignore[reportArgumentType]
+            speech_tokens=speech_start_token,  # pyright: ignore[reportArgumentType]
             cfg_weight=0.0,
         )
 
@@ -494,7 +498,8 @@ class T3(nn.Module):
         speech_logits = self.speech_head(speech_hidden)
 
         processed_logits = logits_processors(
-            speech_start_token, speech_logits[:, -1, :] # pyright: ignore[reportArgumentType]
+            speech_start_token,  # pyright: ignore[reportArgumentType]
+            speech_logits[:, -1, :],
         )
         probs = F.softmax(processed_logits, dim=-1)
         next_speech_token = torch.multinomial(probs, num_samples=1)
@@ -516,7 +521,7 @@ class T3(nn.Module):
             speech_logits = self.speech_head(hidden_states)
 
             input_ids = torch.cat(generated_speech_tokens, dim=1)
-            processed_logits = logits_processors(input_ids, speech_logits[:, -1, :]) # pyright: ignore[reportArgumentType]
+            processed_logits = logits_processors(input_ids, speech_logits[:, -1, :])  # pyright: ignore[reportArgumentType]
             if torch.all(processed_logits == -float("inf")):
                 print("Warning: All logits are -inf")
                 break

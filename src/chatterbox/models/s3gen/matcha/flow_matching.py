@@ -73,7 +73,7 @@ class BASECFM(torch.nn.Module, ABC):
         sol = []
 
         for step in range(1, len(t_span)):
-            dphi_dt = self.estimator(x, mask, mu, t, spks, cond) # pyright: ignore[reportOptionalCall]
+            dphi_dt = self.estimator(x, mask, mu, t, spks, cond)  # pyright: ignore[reportOptionalCall]
 
             x = x + dt * dphi_dt
             t = t + dt
@@ -112,7 +112,9 @@ class BASECFM(torch.nn.Module, ABC):
         u = x1 - (1 - self.sigma_min) * z
 
         loss = F.mse_loss(
-            self.estimator(y, mask, mu, t.squeeze(), spks), u, reduction="sum" # pyright: ignore[reportOptionalCall]
+            self.estimator(y, mask, mu, t.squeeze(), spks), # pyright: ignore[reportOptionalCall]
+            u,
+            reduction="sum",
         ) / (torch.sum(mask) * u.shape[1])
         return loss, y
 

@@ -122,7 +122,7 @@ class UpsampleConformerEncoder(torch.nn.Module):
         normalize_before: bool = True,
         static_chunk_size: int = 0,
         use_dynamic_chunk: bool = False,
-        global_cmvn: torch.nn.Module = None, # pyright: ignore[reportArgumentType]
+        global_cmvn: torch.nn.Module = None,  # pyright: ignore[reportArgumentType]
         use_dynamic_left_chunk: bool = False,
         positionwise_conv_kernel_size: int = 1,
         macaron_style: bool = False,

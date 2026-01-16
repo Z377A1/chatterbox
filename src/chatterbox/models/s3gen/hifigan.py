@@ -326,7 +326,7 @@ class HiFTGenerator(nn.Module):
         source_resblock_dilation_sizes: List[List[int]] = [[1, 3, 5], [1, 3, 5]],
         lrelu_slope: float = 0.1,
         audio_limit: float = 0.99,
-        f0_predictor: torch.nn.Module = None, # pyright: ignore[reportArgumentType]
+        f0_predictor: torch.nn.Module = None,  # pyright: ignore[reportArgumentType]
     ):
         super(HiFTGenerator, self).__init__()
 
@@ -345,10 +345,10 @@ class HiFTGenerator(nn.Module):
             harmonic_num=nb_harmonics,
             sine_amp=nsf_alpha,
             add_noise_std=nsf_sigma,
-            voiced_threshod=nsf_voiced_threshold, # pyright: ignore[reportArgumentType]
+            voiced_threshod=nsf_voiced_threshold,  # pyright: ignore[reportArgumentType]
         )
         self.f0_upsamp = torch.nn.Upsample(
-            scale_factor=np.prod(upsample_rates) * istft_params["hop_len"] # pyright: ignore[reportArgumentType]
+            scale_factor=np.prod(upsample_rates) * istft_params["hop_len"]  # pyright: ignore[reportArgumentType]
         )
 
         self.conv_pre = weight_norm(Conv1d(in_channels, base_channels, 7, 1, padding=3))
@@ -410,7 +410,7 @@ class HiFTGenerator(nn.Module):
                 self.resblocks.append(ResBlock(ch, k, d))
 
         self.conv_post = weight_norm(
-            Conv1d(ch, istft_params["n_fft"] + 2, 7, 1, padding=3) # pyright: ignore[reportPossiblyUnboundVariable]
+            Conv1d(ch, istft_params["n_fft"] + 2, 7, 1, padding=3)  # pyright: ignore[reportPossiblyUnboundVariable]
         )
         self.ups.apply(init_weights)
         self.conv_post.apply(init_weights)
@@ -425,14 +425,14 @@ class HiFTGenerator(nn.Module):
         for l in self.ups:  # noqa: E741
             remove_weight_norm(l)
         for l in self.resblocks:  # noqa: E741
-            l.remove_weight_norm() # pyright: ignore[reportCallIssue]
+            l.remove_weight_norm()  # pyright: ignore[reportCallIssue]
         remove_weight_norm(self.conv_pre)
         remove_weight_norm(self.conv_post)
-        self.m_source.remove_weight_norm() # pyright: ignore[reportCallIssue]
+        self.m_source.remove_weight_norm()  # pyright: ignore[reportCallIssue]
         for l in self.source_downs:  # noqa: E741
             remove_weight_norm(l)
         for l in self.source_resblocks:  # noqa: E741
-            l.remove_weight_norm() # pyright: ignore[reportCallIssue]
+            l.remove_weight_norm()  # pyright: ignore[reportCallIssue]
 
     def _stft(self, x):
         spec = torch.stft(
@@ -484,7 +484,7 @@ class HiFTGenerator(nn.Module):
                     xs = self.resblocks[i * self.num_kernels + j](x)
                 else:
                     xs += self.resblocks[i * self.num_kernels + j](x)
-            x = xs / self.num_kernels # pyright: ignore[reportOptionalOperand]
+            x = xs / self.num_kernels  # pyright: ignore[reportOptionalOperand]
 
         x = F.leaky_relu(x)
         x = self.conv_post(x)
@@ -511,7 +511,7 @@ class HiFTGenerator(nn.Module):
         s = s.transpose(1, 2)
         # mel+source->speech
         generated_speech = self.decode(x=speech_feat, s=s)
-        return generated_speech, f0 # pyright: ignore[reportReturnType]
+        return generated_speech, f0  # pyright: ignore[reportReturnType]
 
     @torch.inference_mode()
     def inference(
@@ -529,4 +529,4 @@ class HiFTGenerator(nn.Module):
         if cache_source.shape[2] != 0:
             s[:, :, : cache_source.shape[2]] = cache_source
         generated_speech = self.decode(x=speech_feat, s=s)
-        return generated_speech, s # pyright: ignore[reportReturnType]
+        return generated_speech, s  # pyright: ignore[reportReturnType]

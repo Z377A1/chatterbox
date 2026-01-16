@@ -141,9 +141,9 @@ def get_or_load_model():
     if MODEL is None:
         print("Model not loaded, initializing...")
         try:
-            MODEL = ChatterboxMultilingualTTS.from_pretrained(DEVICE) # pyright: ignore[reportArgumentType]
+            MODEL = ChatterboxMultilingualTTS.from_pretrained(DEVICE)  # pyright: ignore[reportArgumentType]
             if hasattr(MODEL, "to") and str(MODEL.device) != DEVICE:
-                MODEL.to(DEVICE) # pyright: ignore[reportAttributeAccessIssue]
+                MODEL.to(DEVICE)  # pyright: ignore[reportAttributeAccessIssue]
             print(
                 f"Model loaded successfully. Internal device: {getattr(MODEL, 'device', 'N/A')}"
             )
@@ -186,7 +186,7 @@ def resolve_audio_prompt(language_id: str, provided_path: str | None) -> str | N
 def generate_tts_audio(
     text_input: str,
     language_id: str,
-    audio_prompt_path_input: str = None, # pyright: ignore[reportArgumentType]
+    audio_prompt_path_input: str = None,  # pyright: ignore[reportArgumentType]
     exaggeration_input: float = 0.5,
     temperature_input: float = 0.8,
     seed_num_input: int = 0,
@@ -231,7 +231,7 @@ def generate_tts_audio(
         "cfg_weight": cfgw_input,
     }
     if chosen_prompt:
-        generate_kwargs["audio_prompt_path"] = chosen_prompt # pyright: ignore[reportArgumentType]
+        generate_kwargs["audio_prompt_path"] = chosen_prompt  # pyright: ignore[reportArgumentType]
         print(f"Using audio prompt: {chosen_prompt}")
     else:
         print("No audio prompt provided; using default voice.")
@@ -310,7 +310,7 @@ with gr.Blocks() as demo:
             fn=on_language_change,
             inputs=[language_id, ref_wav, text],
             outputs=[ref_wav, text],
-            show_progress=False, # pyright: ignore[reportArgumentType]
+            show_progress=False,  # pyright: ignore[reportArgumentType]
         )
 
     run_btn.click(

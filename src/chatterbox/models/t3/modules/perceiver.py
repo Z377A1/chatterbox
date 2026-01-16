@@ -104,7 +104,7 @@ class AttentionQKV(nn.Module):
 
     def flash_attention(self, q, k, v, mask=None):
         config = self.flash_config if self.flash_config else {}
-        with torch.backends.xpu.sdp_kernel(**config): # pyright: ignore[reportAttributeAccessIssue]
+        with torch.backends.xpu.sdp_kernel(**config):  # pyright: ignore[reportAttributeAccessIssue]
             out = F.scaled_dot_product_attention(
                 q,
                 k,

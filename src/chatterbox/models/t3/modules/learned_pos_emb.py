@@ -30,5 +30,5 @@ class LearnedPositionEmbeddings(nn.Module):
             idx.to(device) if torch.is_tensor(idx) else torch.tensor(idx, device=device)
         )
         idx = torch.atleast_2d(idx)
-        assert idx.ndim == 2 # pyright: ignore[reportAttributeAccessIssue]
+        assert idx.ndim == 2  # pyright: ignore[reportAttributeAccessIssue]
         return self.emb(idx)  # (B, T, dim)

@@ -206,7 +206,7 @@ class S3Token2Mel(torch.nn.Module):
         )
 
         if ref_dict is None:
-            ref_dict = self.embed_ref(ref_wav, ref_sr) # pyright: ignore[reportArgumentType]
+            ref_dict = self.embed_ref(ref_wav, ref_sr)  # pyright: ignore[reportArgumentType]
         else:
             # type/device casting (all values will be numpy if it's from a prod API call)
             for rk in list(ref_dict):
@@ -228,7 +228,7 @@ class S3Token2Mel(torch.nn.Module):
             token_len=speech_token_lens,
             finalize=finalize,
             noised_mels=noised_mels,
-            n_timesteps=n_cfm_timesteps, # pyright: ignore[reportArgumentType]
+            n_timesteps=n_cfm_timesteps,  # pyright: ignore[reportArgumentType]
             meanflow=self.meanflow,
             **ref_dict,
         )
@@ -266,7 +266,7 @@ class S3Token2Wav(S3Token2Mel):
         )  # (buffers get automatic device casting)
         self.estimator_dtype = "fp32"
 
-    def forward( # pyright: ignore[reportIncompatibleMethodOverride]
+    def forward(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         speech_tokens,
         # locally-computed ref embedding (mutex with ref_dict)
@@ -307,7 +307,7 @@ class S3Token2Wav(S3Token2Mel):
 
         if not self.training:
             # NOTE: ad-hoc method to reduce "spillover" from the reference clip.
-            output_wavs[:, : len(self.trim_fade)] *= self.trim_fade # pyright: ignore[reportArgumentType, reportOperatorIssue]
+            output_wavs[:, : len(self.trim_fade)] *= self.trim_fade  # pyright: ignore[reportArgumentType, reportOperatorIssue]
 
         return output_wavs
 
@@ -343,7 +343,7 @@ class S3Token2Wav(S3Token2Mel):
         return output_mels
 
     @torch.inference_mode()
-    def hift_inference(self, speech_feat, cache_source: torch.Tensor = None): # pyright: ignore[reportArgumentType]
+    def hift_inference(self, speech_feat, cache_source: torch.Tensor = None):  # pyright: ignore[reportArgumentType]
         if cache_source is None:
             cache_source = torch.zeros(1, 1, 0).to(device=self.device, dtype=self.dtype)
         return self.mel2wav.inference(
@@ -380,9 +380,9 @@ class S3Token2Wav(S3Token2Mel):
         output_mels = output_mels.to(
             dtype=self.dtype
         )  # FIXME (fp16 mode) is this still needed?
-        output_wavs, output_sources = self.hift_inference(output_mels, None) # pyright: ignore[reportArgumentType]
+        output_wavs, output_sources = self.hift_inference(output_mels, None)  # pyright: ignore[reportArgumentType]
 
         # NOTE: ad-hoc method to reduce "spillover" from the reference clip.
-        output_wavs[:, : len(self.trim_fade)] *= self.trim_fade # pyright: ignore[reportArgumentType, reportOperatorIssue]
+        output_wavs[:, : len(self.trim_fade)] *= self.trim_fade  # pyright: ignore[reportArgumentType, reportOperatorIssue]
 
         return output_wavs, output_sources

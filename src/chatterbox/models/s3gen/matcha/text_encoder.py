@@ -76,7 +76,7 @@ class ConvReluNorm(nn.Module):
             self.norm_layers.append(LayerNorm(hidden_channels))
         self.proj = torch.nn.Conv1d(hidden_channels, out_channels, 1)
         self.proj.weight.data.zero_()
-        self.proj.bias.data.zero_() # pyright: ignore[reportOptionalMemberAccess]
+        self.proj.bias.data.zero_()  # pyright: ignore[reportOptionalMemberAccess]
 
     def forward(self, x, x_mask):
         x_org = x
@@ -194,8 +194,11 @@ class RotaryPositionalEmbeddings(nn.Module):
         # $[-x^{(\frac{d}{2} + 1)}, -x^{(\frac{d}{2} + 2)}, ..., -x^{(d)}, x^{(1)}, x^{(2)}, ..., x^{(\frac{d}{2})}]$
         neg_half_x = self._neg_half(x_rope)
 
-        x_rope = (x_rope * self.cos_cached[: x.shape[0]]) + ( # pyright: ignore[reportOptionalSubscript]
-            neg_half_x * self.sin_cached[: x.shape[0]] # pyright: ignore[reportOptionalSubscript]
+        x_rope = (
+            (x_rope * self.cos_cached[: x.shape[0]]) # pyright: ignore[reportOptionalSubscript]
+            + (
+                neg_half_x * self.sin_cached[: x.shape[0]] # pyright: ignore[reportOptionalSubscript]
+            )
         )
 
         return rearrange(torch.cat((x_rope, x_pass), dim=-1), "t b h d -> b h t d")
@@ -239,7 +242,7 @@ class MultiHeadAttention(nn.Module):
         torch.nn.init.xavier_uniform_(self.conv_k.weight)
         if proximal_init:
             self.conv_k.weight.data.copy_(self.conv_q.weight.data)
-            self.conv_k.bias.data.copy_(self.conv_q.bias.data) # pyright: ignore[reportOptionalMemberAccess]
+            self.conv_k.bias.data.copy_(self.conv_q.bias.data)  # pyright: ignore[reportOptionalMemberAccess]
         torch.nn.init.xavier_uniform_(self.conv_v.weight)
 
     def forward(self, x, c, attn_mask=None):
@@ -443,7 +446,7 @@ class TextEncoder(nn.Module):
 
         x = self.prenet(x, x_mask)
         if self.n_spks > 1:
-            x = torch.cat([x, spks.unsqueeze(-1).repeat(1, 1, x.shape[-1])], dim=1) # pyright: ignore[reportOptionalMemberAccess]
+            x = torch.cat([x, spks.unsqueeze(-1).repeat(1, 1, x.shape[-1])], dim=1)  # pyright: ignore[reportOptionalMemberAccess]
         x = self.encoder(x, x_mask)
         mu = self.proj_m(x) * x_mask
 

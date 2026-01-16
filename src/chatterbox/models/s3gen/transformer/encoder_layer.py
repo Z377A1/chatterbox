@@ -227,7 +227,7 @@ class ConformerEncoderLayer(nn.Module):
         if self.normalize_before:
             x = self.norm_ff(x)
 
-        x = residual + self.ff_scale * self.dropout(self.feed_forward(x)) # pyright: ignore[reportOptionalCall]
+        x = residual + self.ff_scale * self.dropout(self.feed_forward(x))  # pyright: ignore[reportOptionalCall]
         if not self.normalize_before:
             x = self.norm_ff(x)
 

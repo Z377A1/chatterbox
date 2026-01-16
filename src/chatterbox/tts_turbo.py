@@ -146,7 +146,7 @@ class ChatterboxTurboTTS:
         hp = T3Config(text_tokens_dict_size=50276)
         hp.llama_config_name = "GPT2_medium"
         hp.speech_tokens_dict_size = 6563
-        hp.input_pos_emb = None # pyright: ignore[reportAttributeAccessIssue]
+        hp.input_pos_emb = None  # pyright: ignore[reportAttributeAccessIssue]
         hp.speech_cond_prompt_len = 375
         hp.use_perceiver_resampler = False
         hp.emotion_adv = False
@@ -155,7 +155,7 @@ class ChatterboxTurboTTS:
         t3_state = load_file(ckpt_dir / "t3_turbo_v1.safetensors")
         if "model" in t3_state.keys():
             t3_state = t3_state["model"][0]
-        t3.load_state_dict(t3_state) # pyright: ignore[reportArgumentType]
+        t3.load_state_dict(t3_state)  # pyright: ignore[reportArgumentType]
         del t3.tfmr.wte
         t3.to(device).eval()
 
@@ -173,7 +173,7 @@ class ChatterboxTurboTTS:
         conds = None
         builtin_voice = ckpt_dir / "conds.pt"
         if builtin_voice.exists():
-            conds = Conditionals.load(builtin_voice, map_location=map_location).to( # pyright: ignore[reportArgumentType]
+            conds = Conditionals.load(builtin_voice, map_location=map_location).to(  # pyright: ignore[reportArgumentType]
                 device
             )
 
@@ -230,14 +230,17 @@ class ChatterboxTurboTTS:
 
         s3gen_ref_wav = s3gen_ref_wav[: self.DEC_COND_LEN]
         s3gen_ref_dict = self.s3gen.embed_ref(
-            s3gen_ref_wav, S3GEN_SR, device=self.device # pyright: ignore[reportArgumentType]
+            s3gen_ref_wav, # pyright: ignore[reportArgumentType]
+            S3GEN_SR,
+            device=self.device,
         )
 
         # Speech cond prompt tokens
         if plen := self.t3.hp.speech_cond_prompt_len:
             s3_tokzr = self.s3gen.tokenizer
             t3_cond_prompt_tokens, _ = s3_tokzr.forward(
-                [ref_16k_wav[: self.ENC_COND_LEN]], max_len=plen # pyright: ignore[reportArgumentType]
+                [ref_16k_wav[: self.ENC_COND_LEN]], # pyright: ignore[reportArgumentType]
+                max_len=plen,
             )
             t3_cond_prompt_tokens = torch.atleast_2d(t3_cond_prompt_tokens).to(
                 self.device
@@ -247,11 +250,11 @@ class ChatterboxTurboTTS:
         ve_embed = torch.from_numpy(
             self.ve.embeds_from_wavs([ref_16k_wav], sample_rate=S3_SR)
         )
-        ve_embed = ve_embed.mean(axis=0, keepdim=True).to(self.device) # pyright: ignore[reportCallIssue]
+        ve_embed = ve_embed.mean(axis=0, keepdim=True).to(self.device)  # pyright: ignore[reportCallIssue]
 
         t3_cond = T3Cond(
             speaker_emb=ve_embed,
-            cond_prompt_speech_tokens=t3_cond_prompt_tokens, # pyright: ignore[reportPossiblyUnboundVariable]
+            cond_prompt_speech_tokens=t3_cond_prompt_tokens,  # pyright: ignore[reportPossiblyUnboundVariable]
             emotion_adv=exaggeration * torch.ones(1, 1, 1),
         ).to(device=self.device)
         self.conds = Conditionals(t3_cond, s3gen_ref_dict)
@@ -287,13 +290,13 @@ class ChatterboxTurboTTS:
 
         # Norm and tokenize text
         text = punc_norm(text)
-        text_tokens = self.tokenizer( # pyright: ignore[reportCallIssue]
+        text_tokens = self.tokenizer(  # pyright: ignore[reportCallIssue]
             text, return_tensors="pt", padding=True, truncation=True
         )
         text_tokens = text_tokens.input_ids.to(self.device)
 
         speech_tokens = self.t3.inference_turbo(
-            t3_cond=self.conds.t3, # pyright: ignore[reportOptionalMemberAccess]
+            t3_cond=self.conds.t3,  # pyright: ignore[reportOptionalMemberAccess]
             text_tokens=text_tokens,
             temperature=temperature,
             top_k=top_k,
@@ -309,7 +312,7 @@ class ChatterboxTurboTTS:
 
         wav, _ = self.s3gen.inference(
             speech_tokens=speech_tokens,
-            ref_dict=self.conds.gen, # pyright: ignore[reportOptionalMemberAccess]
+            ref_dict=self.conds.gen,  # pyright: ignore[reportOptionalMemberAccess]
             n_cfm_timesteps=2,
         )
         wav = wav.squeeze(0).detach().cpu().numpy()

@@ -33,7 +33,7 @@ class ConditionalCFM(BASECFM):
         cfm_params,
         n_spks=1,
         spk_emb_dim=64,
-        estimator: torch.nn.Module = None, # pyright: ignore[reportArgumentType]
+        estimator: torch.nn.Module = None,  # pyright: ignore[reportArgumentType]
     ):
         super().__init__(
             n_feats=in_channels,
@@ -233,7 +233,7 @@ class CausalConditionalCFM(ConditionalCFM):
         self.rand_noise = None
 
     @torch.inference_mode()
-    def forward( # pyright: ignore[reportIncompatibleMethodOverride]
+    def forward(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         mu,
         mask,

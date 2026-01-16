@@ -147,9 +147,12 @@ def add_optional_chunk_mask(
                 chunk_size = chunk_size % 25 + 1
                 if use_dynamic_left_chunk:
                     max_left_chunks = (max_len - 1) // chunk_size
-                    num_left_chunks = torch.randint(0, max_left_chunks, (1,)).item() # pyright: ignore[reportCallIssue, reportArgumentType]
+                    num_left_chunks = torch.randint(0, max_left_chunks, (1,)).item()  # pyright: ignore[reportCallIssue, reportArgumentType]
         chunk_masks = subsequent_chunk_mask(
-            xs.size(1), chunk_size, num_left_chunks, xs.device # pyright: ignore[reportArgumentType]
+            xs.size(1),
+            chunk_size, # pyright: ignore[reportArgumentType]
+            num_left_chunks,
+            xs.device,
         )  # (L, L)
         chunk_masks = chunk_masks.unsqueeze(0)  # (1, L, L)
         chunk_masks = masks & chunk_masks  # (B, L, L)
@@ -190,7 +193,7 @@ def make_pad_mask(lengths: torch.Tensor, max_len: int = 0) -> torch.Tensor:
     """
     lengths = lengths.long()
     batch_size = lengths.size(0)
-    max_len = max_len if max_len > 0 else lengths.max().item() # pyright: ignore[reportAssignmentType]
+    max_len = max_len if max_len > 0 else lengths.max().item()  # pyright: ignore[reportAssignmentType]
     seq_range = torch.arange(0, max_len, dtype=torch.int64, device=lengths.device)
     seq_range_expand = seq_range.unsqueeze(0).expand(batch_size, max_len)
     seq_length_expand = lengths.unsqueeze(-1)

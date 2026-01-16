@@ -78,7 +78,7 @@ class TimestepEmbedding(nn.Module):
         in_channels: int,
         time_embed_dim: int,
         act_fn: str = "silu",
-        out_dim: int = None, # pyright: ignore[reportArgumentType]
+        out_dim: int = None,  # pyright: ignore[reportArgumentType]
         post_act_fn: Optional[str] = None,
         cond_proj_dim=None,
     ):
@@ -106,7 +106,7 @@ class TimestepEmbedding(nn.Module):
 
     def forward(self, sample, condition=None):
         if condition is not None:
-            sample = sample + self.cond_proj(condition) # pyright: ignore[reportOptionalCall]
+            sample = sample + self.cond_proj(condition)  # pyright: ignore[reportOptionalCall]
         sample = self.linear_1(sample)
 
         if self.act is not None:
@@ -157,12 +157,12 @@ class Upsample1D(nn.Module):
     def forward(self, inputs):
         assert inputs.shape[1] == self.channels
         if self.use_conv_transpose:
-            return self.conv(inputs) # pyright: ignore[reportOptionalCall]
+            return self.conv(inputs)  # pyright: ignore[reportOptionalCall]
 
         outputs = F.interpolate(inputs, scale_factor=2.0, mode="nearest")
 
         if self.use_conv:
-            outputs = self.conv(outputs) # pyright: ignore[reportOptionalCall]
+            outputs = self.conv(outputs)  # pyright: ignore[reportOptionalCall]
 
         return outputs
 
@@ -195,7 +195,7 @@ class ConformerWrapper(ConformerBlock):
             conv_causal=conv_causal,
         )
 
-    def forward( # pyright: ignore[reportIncompatibleMethodOverride]
+    def forward(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         hidden_states,
         attention_mask,
@@ -406,10 +406,10 @@ class Decoder(nn.Module):
 
         hiddens = []
         masks = [mask]
-        for resnet, transformer_blocks, downsample in self.down_blocks: # pyright: ignore[reportGeneralTypeIssues]
-            x = resnet(x, mask_down, t) # pyright: ignore[reportPossiblyUnboundVariable]  # noqa: F821
+        for resnet, transformer_blocks, downsample in self.down_blocks:  # pyright: ignore[reportGeneralTypeIssues]
+            x = resnet(x, mask_down, t)  # pyright: ignore[reportPossiblyUnboundVariable]  # noqa: F821
             x = rearrange(x, "b c t -> b t c")
-            mask_down = rearrange(mask_down, "b 1 t -> b t") # pyright: ignore[reportUnboundVariable]  # noqa: F821
+            mask_down = rearrange(mask_down, "b 1 t -> b t")  # pyright: ignore[reportUnboundVariable]  # noqa: F821
             for transformer_block in transformer_blocks:
                 x = transformer_block(
                     hidden_states=x,
@@ -425,7 +425,7 @@ class Decoder(nn.Module):
         masks = masks[:-1]
         mask_mid = masks[-1]
 
-        for resnet, transformer_blocks in self.mid_blocks: # pyright: ignore[reportGeneralTypeIssues]
+        for resnet, transformer_blocks in self.mid_blocks:  # pyright: ignore[reportGeneralTypeIssues]
             x = resnet(x, mask_mid, t)
             x = rearrange(x, "b c t -> b t c")
             mask_mid = rearrange(mask_mid, "b 1 t -> b t")
@@ -438,7 +438,7 @@ class Decoder(nn.Module):
             x = rearrange(x, "b t c -> b c t")
             mask_mid = rearrange(mask_mid, "b t -> b 1 t")
 
-        for resnet, transformer_blocks, upsample in self.up_blocks: # pyright: ignore[reportGeneralTypeIssues]
+        for resnet, transformer_blocks, upsample in self.up_blocks:  # pyright: ignore[reportGeneralTypeIssues]
             mask_up = masks.pop()
             x = resnet(pack([x, hiddens.pop()], "b * t")[0], mask_up, t)
             x = rearrange(x, "b c t -> b t c")
@@ -453,7 +453,7 @@ class Decoder(nn.Module):
             mask_up = rearrange(mask_up, "b t -> b 1 t")
             x = upsample(x * mask_up)
 
-        x = self.final_block(x, mask_up) # pyright: ignore[reportPossiblyUnboundVariable]
-        output = self.final_proj(x * mask_up) # pyright: ignore[reportPossiblyUnboundVariable]
+        x = self.final_block(x, mask_up)  # pyright: ignore[reportPossiblyUnboundVariable]
+        output = self.final_proj(x * mask_up)  # pyright: ignore[reportPossiblyUnboundVariable]
 
         return output * mask

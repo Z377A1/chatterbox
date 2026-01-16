@@ -21,7 +21,7 @@ class ChatterboxVC:
         self,
         s3gen: S3Token2Wav,
         device: str,
-        ref_dict: dict = None, # pyright: ignore[reportArgumentType]
+        ref_dict: dict = None,  # pyright: ignore[reportArgumentType]
     ):
         self.sr = S3GEN_SR
         self.s3gen = s3gen
@@ -54,7 +54,7 @@ class ChatterboxVC:
         s3gen.load_state_dict(load_file(ckpt_dir / "s3gen.safetensors"), strict=False)
         s3gen.to(device).eval()
 
-        return cls(s3gen, device, ref_dict=ref_dict) # pyright: ignore[reportArgumentType]
+        return cls(s3gen, device, ref_dict=ref_dict)  # pyright: ignore[reportArgumentType]
 
     @classmethod
     def from_pretrained(cls, device) -> "ChatterboxVC":
@@ -73,7 +73,7 @@ class ChatterboxVC:
         for fpath in ["s3gen.safetensors", "conds.pt"]:
             local_path = hf_hub_download(repo_id=REPO_ID, filename=fpath)
 
-        return cls.from_local(Path(local_path).parent, device) # pyright: ignore[reportPossiblyUnboundVariable]
+        return cls.from_local(Path(local_path).parent, device)  # pyright: ignore[reportPossiblyUnboundVariable]
 
     def set_target_voice(self, wav_fpath):
         ## Load reference wav
@@ -81,7 +81,9 @@ class ChatterboxVC:
 
         s3gen_ref_wav = s3gen_ref_wav[: self.DEC_COND_LEN]
         self.ref_dict = self.s3gen.embed_ref(
-            s3gen_ref_wav, S3GEN_SR, device=self.device # pyright: ignore[reportArgumentType]
+            s3gen_ref_wav, # pyright: ignore[reportArgumentType]
+            S3GEN_SR,
+            device=self.device,
         )
 
     def generate(

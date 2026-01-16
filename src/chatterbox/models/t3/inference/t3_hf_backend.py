@@ -36,7 +36,7 @@ class T3HuggingfaceBackend(LlamaPreTrainedModel, GenerationMixin):
         self.alignment_stream_analyzer = alignment_stream_analyzer
 
     @torch.inference_mode()
-    def prepare_inputs_for_generation( # pyright: ignore[reportIncompatibleMethodOverride]
+    def prepare_inputs_for_generation(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         input_ids: torch.Tensor,
         decoder_cond: torch.Tensor,

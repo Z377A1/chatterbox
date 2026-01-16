@@ -50,8 +50,8 @@ class CausalMaskedDiffWithXvec(torch.nn.Module):
         only_mask_loss: bool = True,
         token_mel_ratio: int = 2,
         pre_lookahead_len: int = 3,
-        encoder: torch.nn.Module = None, # pyright: ignore[reportArgumentType]
-        decoder: torch.nn.Module = None, # pyright: ignore[reportArgumentType]
+        encoder: torch.nn.Module = None,  # pyright: ignore[reportArgumentType]
+        decoder: torch.nn.Module = None,  # pyright: ignore[reportArgumentType]
         decoder_conf: Dict = {
             "in_channels": 240,
             "out_channel": 80,
@@ -99,7 +99,7 @@ class CausalMaskedDiffWithXvec(torch.nn.Module):
         self.input_embedding = nn.Embedding(vocab_size, input_size)
         self.spk_embed_affine_layer = torch.nn.Linear(spk_embed_dim, output_size)
         self.encoder = encoder
-        self.encoder_proj = torch.nn.Linear(self.encoder.output_size(), output_size) # pyright: ignore[reportCallIssue]
+        self.encoder_proj = torch.nn.Linear(self.encoder.output_size(), output_size)  # pyright: ignore[reportCallIssue]
         self.decoder = decoder
         self.only_mask_loss = only_mask_loss
         self.token_mel_ratio = token_mel_ratio
@@ -148,7 +148,7 @@ class CausalMaskedDiffWithXvec(torch.nn.Module):
             embedding,
             cond=conds,
             # streaming=streaming,
-        ) # pyright: ignore[reportCallIssue]
+        )  # pyright: ignore[reportCallIssue]
         return {"loss": loss}
 
     @torch.inference_mode()

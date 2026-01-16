@@ -82,13 +82,13 @@ class T3CondEnc(nn.Module):
         if cond_prompt_speech_emb is None:
             cond_prompt_speech_emb = empty  # (B, 0, dim)
         elif self.hp.use_perceiver_resampler:
-            cond_prompt_speech_emb = self.perceiver(cond_prompt_speech_emb) # pyright: ignore[reportOptionalCall]
+            cond_prompt_speech_emb = self.perceiver(cond_prompt_speech_emb)  # pyright: ignore[reportOptionalCall]
 
         # Emotion Adv: must provide a value if this model uses emotion conditioning
         cond_emotion_adv = empty  # (B, 0, dim)
         if self.hp.emotion_adv:
             assert cond.emotion_adv is not None
-            cond_emotion_adv = self.emotion_adv_fc(cond.emotion_adv.view(-1, 1, 1)) # pyright: ignore[reportOptionalCall, reportAttributeAccessIssue]
+            cond_emotion_adv = self.emotion_adv_fc(cond.emotion_adv.view(-1, 1, 1))  # pyright: ignore[reportOptionalCall, reportAttributeAccessIssue]
 
         # Concat and return
         cond_embeds = torch.cat(

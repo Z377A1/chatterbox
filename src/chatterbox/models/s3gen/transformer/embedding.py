@@ -286,8 +286,8 @@ class EspnetRelPositionalEncoding(torch.nn.Module):
         Returns:
             torch.Tensor: Corresponding encoding
         """
-        pos_emb = self.pe[ # pyright: ignore[reportOptionalSubscript]
+        pos_emb = self.pe[  # pyright: ignore[reportOptionalSubscript]
             :,
-            self.pe.size(1) // 2 - size + 1 : self.pe.size(1) // 2 + size, # pyright: ignore[reportOptionalMemberAccess]
+            self.pe.size(1) // 2 - size + 1 : self.pe.size(1) // 2 + size,  # pyright: ignore[reportOptionalMemberAccess]
         ]
         return pos_emb

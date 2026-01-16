@@ -104,7 +104,7 @@ class CausalConv1d(torch.nn.Conv1d):
         assert stride == 1
         self.causal_padding = (kernel_size - 1, 0)
 
-    def forward(self, x: torch.Tensor): # pyright: ignore[reportIncompatibleMethodOverride]
+    def forward(self, x: torch.Tensor):  # pyright: ignore[reportIncompatibleMethodOverride]
         x = F.pad(x, self.causal_padding)
         x = super(CausalConv1d, self).forward(x)
         return x
@@ -315,7 +315,7 @@ class ConditionalDecoder(nn.Module):
             r = self.time_embeddings(r).to(t.dtype)
             r = self.time_mlp(r)
             concat_embed = torch.cat([t, r], dim=1)
-            t = self.time_embed_mixer(concat_embed) # pyright: ignore[reportOptionalCall]
+            t = self.time_embed_mixer(concat_embed)  # pyright: ignore[reportOptionalCall]
 
         x = pack([x, mu], "b * t")[0]
 
@@ -327,7 +327,7 @@ class ConditionalDecoder(nn.Module):
 
         hiddens = []
         masks = [mask]
-        for resnet, transformer_blocks, downsample in self.down_blocks: # pyright: ignore[reportGeneralTypeIssues]
+        for resnet, transformer_blocks, downsample in self.down_blocks:  # pyright: ignore[reportGeneralTypeIssues]
             mask_down = masks[-1]
             x = resnet(x, mask_down, t)
             x = rearrange(x, "b c t -> b t c").contiguous()
@@ -349,7 +349,7 @@ class ConditionalDecoder(nn.Module):
         masks = masks[:-1]
         mask_mid = masks[-1]
 
-        for resnet, transformer_blocks in self.mid_blocks: # pyright: ignore[reportGeneralTypeIssues]
+        for resnet, transformer_blocks in self.mid_blocks:  # pyright: ignore[reportGeneralTypeIssues]
             x = resnet(x, mask_mid, t)
             x = rearrange(x, "b c t -> b t c").contiguous()
             # attn_mask = torch.matmul(mask_mid.transpose(1, 2).contiguous(), mask_mid)
@@ -365,7 +365,7 @@ class ConditionalDecoder(nn.Module):
                 )
             x = rearrange(x, "b t c -> b c t").contiguous()
 
-        for resnet, transformer_blocks, upsample in self.up_blocks: # pyright: ignore[reportGeneralTypeIssues]
+        for resnet, transformer_blocks, upsample in self.up_blocks:  # pyright: ignore[reportGeneralTypeIssues]
             mask_up = masks.pop()
             skip = hiddens.pop()
             x = pack([x[:, :, : skip.shape[-1]], skip], "b * t")[0]
@@ -384,6 +384,6 @@ class ConditionalDecoder(nn.Module):
                 )
             x = rearrange(x, "b t c -> b c t").contiguous()
             x = upsample(x * mask_up)
-        x = self.final_block(x, mask_up) # pyright: ignore[reportPossiblyUnboundVariable]
-        output = self.final_proj(x * mask_up) # pyright: ignore[reportPossiblyUnboundVariable]
+        x = self.final_block(x, mask_up)  # pyright: ignore[reportPossiblyUnboundVariable]
+        output = self.final_proj(x * mask_up)  # pyright: ignore[reportPossiblyUnboundVariable]
         return output * mask

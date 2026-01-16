@@ -112,7 +112,7 @@ class ChatterboxTTS:
         ve: VoiceEncoder,
         tokenizer: EnTokenizer,
         device: str,
-        conds: Conditionals = None, # pyright: ignore[reportArgumentType]
+        conds: Conditionals = None,  # pyright: ignore[reportArgumentType]
     ):
         self.sr = S3GEN_SR  # sample rate of synthesized audio
         self.t3 = t3
@@ -141,7 +141,7 @@ class ChatterboxTTS:
         t3_state = load_file(ckpt_dir / "t3_cfg.safetensors")
         if "model" in t3_state.keys():
             t3_state = t3_state["model"][0]
-        t3.load_state_dict(t3_state) # pyright: ignore[reportArgumentType]
+        t3.load_state_dict(t3_state)  # pyright: ignore[reportArgumentType]
         t3.to(device).eval()
 
         s3gen = S3Token2Wav()
@@ -152,11 +152,11 @@ class ChatterboxTTS:
 
         conds = None
         if (builtin_voice := ckpt_dir / "conds.pt").exists():
-            conds = Conditionals.load(builtin_voice, map_location=map_location).to( # pyright: ignore[reportArgumentType]
+            conds = Conditionals.load(builtin_voice, map_location=map_location).to(  # pyright: ignore[reportArgumentType]
                 device
             )
 
-        return cls(t3, s3gen, ve, tokenizer, device, conds=conds) # pyright: ignore[reportArgumentType]
+        return cls(t3, s3gen, ve, tokenizer, device, conds=conds)  # pyright: ignore[reportArgumentType]
 
     @classmethod
     def from_pretrained(cls, device) -> "ChatterboxTTS":
@@ -181,7 +181,7 @@ class ChatterboxTTS:
         ]:
             local_path = hf_hub_download(repo_id=REPO_ID, filename=fpath)
 
-        return cls.from_local(Path(local_path).parent, device) # pyright: ignore[reportPossiblyUnboundVariable]
+        return cls.from_local(Path(local_path).parent, device)  # pyright: ignore[reportPossiblyUnboundVariable]
 
     def prepare_conditionals(self, wav_fpath, exaggeration=0.5):
         ## Load reference wav
@@ -191,14 +191,17 @@ class ChatterboxTTS:
 
         s3gen_ref_wav = s3gen_ref_wav[: self.DEC_COND_LEN]
         s3gen_ref_dict = self.s3gen.embed_ref(
-            s3gen_ref_wav, S3GEN_SR, device=self.device # pyright: ignore[reportArgumentType]
+            s3gen_ref_wav, # pyright: ignore[reportArgumentType]
+            S3GEN_SR,
+            device=self.device,
         )
 
         # Speech cond prompt tokens
         if plen := self.t3.hp.speech_cond_prompt_len:
             s3_tokzr = self.s3gen.tokenizer
             t3_cond_prompt_tokens, _ = s3_tokzr.forward(
-                [ref_16k_wav[: self.ENC_COND_LEN]], max_len=plen # pyright: ignore[reportArgumentType]
+                [ref_16k_wav[: self.ENC_COND_LEN]], # pyright: ignore[reportArgumentType]
+                max_len=plen,
             )
             t3_cond_prompt_tokens = torch.atleast_2d(t3_cond_prompt_tokens).to(
                 self.device
@@ -208,11 +211,11 @@ class ChatterboxTTS:
         ve_embed = torch.from_numpy(
             self.ve.embeds_from_wavs([ref_16k_wav], sample_rate=S3_SR)
         )
-        ve_embed = ve_embed.mean(axis=0, keepdim=True).to(self.device) # pyright: ignore[reportCallIssue]
+        ve_embed = ve_embed.mean(axis=0, keepdim=True).to(self.device)  # pyright: ignore[reportCallIssue]
 
         t3_cond = T3Cond(
             speaker_emb=ve_embed,
-            cond_prompt_speech_tokens=t3_cond_prompt_tokens, # pyright: ignore[reportPossiblyUnboundVariable]
+            cond_prompt_speech_tokens=t3_cond_prompt_tokens,  # pyright: ignore[reportPossiblyUnboundVariable]
             emotion_adv=exaggeration * torch.ones(1, 1, 1),
         ).to(device=self.device)
         self.conds = Conditionals(t3_cond, s3gen_ref_dict)
@@ -236,9 +239,9 @@ class ChatterboxTTS:
             )
 
         # Update exaggeration if needed
-        if exaggeration != self.conds.t3.emotion_adv[0, 0, 0]: # pyright: ignore[reportIndexIssue, reportOptionalSubscript, reportOptionalMemberAccess]
-            _cond: T3Cond = self.conds.t3 # pyright: ignore[reportOptionalMemberAccess]
-            self.conds.t3 = T3Cond( # pyright: ignore[reportOptionalMemberAccess]
+        if exaggeration != self.conds.t3.emotion_adv[0, 0, 0]:  # pyright: ignore[reportIndexIssue, reportOptionalSubscript, reportOptionalMemberAccess]
+            _cond: T3Cond = self.conds.t3  # pyright: ignore[reportOptionalMemberAccess]
+            self.conds.t3 = T3Cond(  # pyright: ignore[reportOptionalMemberAccess]
                 speaker_emb=_cond.speaker_emb,
                 cond_prompt_speech_tokens=_cond.cond_prompt_speech_tokens,
                 emotion_adv=exaggeration * torch.ones(1, 1, 1),
@@ -260,7 +263,7 @@ class ChatterboxTTS:
 
         with torch.inference_mode():
             speech_tokens = self.t3.inference(
-                t3_cond=self.conds.t3, # pyright: ignore[reportOptionalMemberAccess]
+                t3_cond=self.conds.t3,  # pyright: ignore[reportOptionalMemberAccess]
                 text_tokens=text_tokens,
                 max_new_tokens=1000,  # TODO: use the value in config
                 temperature=temperature,
@@ -281,7 +284,7 @@ class ChatterboxTTS:
 
             wav, _ = self.s3gen.inference(
                 speech_tokens=speech_tokens,
-                ref_dict=self.conds.gen, # pyright: ignore[reportOptionalMemberAccess]
+                ref_dict=self.conds.gen,  # pyright: ignore[reportOptionalMemberAccess]
             )
             wav = wav.squeeze(0).detach().cpu().numpy()
             watermarked_wav = self.watermarker.apply_watermark(wav, sample_rate=self.sr)

@@ -13,7 +13,7 @@ from .config import VoiceEncConfig
 from .melspec import melspectrogram
 
 
-def pack(arrays, seq_len: int = None, pad_value=0): # pyright: ignore[reportArgumentType]
+def pack(arrays, seq_len: int = None, pad_value=0):  # pyright: ignore[reportArgumentType]
     """
     Given a list of length B of array-like objects of shapes (Ti, ...), packs them in a single tensor of
     shape (B, T, ...) by padding each individual array on the right.
@@ -37,18 +37,21 @@ def pack(arrays, seq_len: int = None, pad_value=0): # pyright: ignore[reportArgu
     device = None
     if isinstance(arrays[0], torch.Tensor):
         tensors = arrays
-        device = tensors[0].device # pyright: ignore[reportAttributeAccessIssue]
+        device = tensors[0].device  # pyright: ignore[reportAttributeAccessIssue]
     else:
         tensors = [torch.as_tensor(array) for array in arrays]
 
     # Fill the packed tensor with the array data
     packed_shape = (len(tensors), seq_len, *tensors[0].shape[1:])
-    packed_tensor = torch.full( # pyright: ignore[reportCallIssue]
-        packed_shape, pad_value, dtype=tensors[0].dtype, device=device # pyright: ignore[reportArgumentType]
+    packed_tensor = torch.full(  # pyright: ignore[reportCallIssue]
+        packed_shape,
+        pad_value,
+        dtype=tensors[0].dtype, # pyright: ignore[reportArgumentType]
+        device=device,
     )
 
     for i, tensor in enumerate(tensors):
-        packed_tensor[i, : tensor.size(0)] = tensor # pyright: ignore[reportCallIssue]
+        packed_tensor[i, : tensor.size(0)] = tensor  # pyright: ignore[reportCallIssue]
 
     return packed_tensor
 
@@ -87,7 +90,7 @@ def stride_as_partials(
     mel: np.ndarray,
     hp: VoiceEncConfig,
     overlap=0.5,
-    rate: float = None, # pyright: ignore[reportArgumentType]
+    rate: float = None,  # pyright: ignore[reportArgumentType]
     min_coverage=0.8,
 ):
     """
@@ -95,7 +98,7 @@ def stride_as_partials(
     TODO: doc
     """
     assert 0 < min_coverage <= 1
-    frame_step = get_frame_step(overlap, rate, hp) # pyright: ignore[reportArgumentType]
+    frame_step = get_frame_step(overlap, rate, hp)  # pyright: ignore[reportArgumentType]
 
     # Compute how many partials can fit in the mel
     n_partials, target_len = get_num_wins(len(mel), frame_step, min_coverage, hp)
@@ -168,7 +171,7 @@ class VoiceEncoder(nn.Module):
         mels: torch.Tensor,
         mel_lens,
         overlap=0.5,
-        rate: float = None, # pyright: ignore[reportArgumentType]
+        rate: float = None,  # pyright: ignore[reportArgumentType]
         min_coverage=0.8,
         batch_size=None,
     ):
@@ -181,9 +184,9 @@ class VoiceEncoder(nn.Module):
         mel_lens = mel_lens.tolist() if torch.is_tensor(mel_lens) else mel_lens
 
         # Compute where to split the utterances into partials
-        frame_step = get_frame_step(overlap, rate, self.hp) # pyright: ignore[reportArgumentType]
+        frame_step = get_frame_step(overlap, rate, self.hp)  # pyright: ignore[reportArgumentType]
         n_partials, target_lens = zip(
-            *(get_num_wins(l, frame_step, min_coverage, self.hp) for l in mel_lens) # noqa: E741
+            *(get_num_wins(l, frame_step, min_coverage, self.hp) for l in mel_lens)  # noqa: E741
         )
 
         # Possibly pad the mels to reach the target lengths
@@ -273,7 +276,10 @@ class VoiceEncoder(nn.Module):
         # Embed them
         with torch.inference_mode():
             utt_embeds = self.inference(
-                mels.to(self.device), mel_lens, batch_size=batch_size, **kwargs # pyright: ignore[reportAttributeAccessIssue]
+                mels.to(self.device), # pyright: ignore[reportAttributeAccessIssue]
+                mel_lens,
+                batch_size=batch_size,
+                **kwargs,
             ).numpy()
 
         return self.utt_to_spk_embed(utt_embeds) if as_spk else utt_embeds

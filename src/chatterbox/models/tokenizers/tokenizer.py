@@ -125,7 +125,7 @@ def add_hebrew_diacritics(text: str) -> str:
 
     try:
         if _dicta is None:
-            from dicta_onnx import Dicta # pyright: ignore[reportMissingImports]
+            from dicta_onnx import Dicta  # pyright: ignore[reportMissingImports]
 
             _dicta = Dicta()
 
@@ -218,7 +218,7 @@ class ChineseCangjieConverter:
         output = []
         if self.segmenter is not None:
             segmented_words = self.segmenter.cut(text)
-            full_text = " ".join(segmented_words) # pyright: ignore[reportCallIssue, reportArgumentType]
+            full_text = " ".join(segmented_words)  # pyright: ignore[reportCallIssue, reportArgumentType]
         else:
             full_text = text
 
@@ -245,7 +245,7 @@ def add_russian_stress(text: str) -> str:
 
     try:
         if _russian_stresser is None:
-            from russian_text_stresser.text_stresser import RussianTextStresser # pyright: ignore[reportMissingImports]
+            from russian_text_stresser.text_stresser import RussianTextStresser  # pyright: ignore[reportMissingImports]
 
             _russian_stresser = RussianTextStresser()
 
@@ -276,7 +276,7 @@ class MTLTokenizer:
     def preprocess_text(
         self,
         raw_text: str,
-        language_id: str = None, # pyright: ignore[reportArgumentType]
+        language_id: str = None,  # pyright: ignore[reportArgumentType]
         lowercase: bool = True,
         nfkd_normalize: bool = True,
     ):
@@ -294,13 +294,13 @@ class MTLTokenizer:
     def text_to_tokens(
         self,
         text: str,
-        language_id: str = None, # pyright: ignore[reportArgumentType]
+        language_id: str = None,  # pyright: ignore[reportArgumentType]
         lowercase: bool = True,
         nfkd_normalize: bool = True,
     ):
         text_tokens = self.encode(
             text,
-            language_id=language_id, # pyright: ignore[reportArgumentType]
+            language_id=language_id,  # pyright: ignore[reportArgumentType]
             lowercase=lowercase,
             nfkd_normalize=nfkd_normalize,
         )
@@ -310,7 +310,7 @@ class MTLTokenizer:
     def encode(
         self,
         txt: str,
-        language_id: str = None, # pyright: ignore[reportArgumentType]
+        language_id: str = None,  # pyright: ignore[reportArgumentType]
         lowercase: bool = True,
         nfkd_normalize: bool = True,
     ):
