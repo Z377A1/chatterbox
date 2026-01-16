@@ -1,6 +1,15 @@
 uv venv --python 3.10
 
-source .venv/bin/activate
+# Check if linux/macos or windows
+if [ "$(uname)" == "Linux" ] || [ "$(uname)" == "Darwin" ]; then
+    source .venv/bin/activate
+elif [[ "$(uname -s)" == *"MINGW64_NT"* || "$(uname -s)" == *"MSYS_NT"* ]]; then
+    source .venv/Scripts/activate
+else
+    echo "Unsupported OS. Please use Linux/macOS or Windows."
+    exit 1
+fi
+
 
 uv sync --reinstall
 
