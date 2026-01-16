@@ -9,6 +9,7 @@
         "**/.hg": true,
         "**/.DS_Store": true,
         "**/Thumbs.db": true,
-        "**/.venv": true
+        "**/.venv": true,
+        "**/.gradio": true
     }
 }
