@@ -240,12 +240,12 @@ class T3(nn.Module):
         masked_text = text_tokens.masked_fill(mask_text, IGNORE_ID)
         masked_speech = speech_tokens.masked_fill(mask_speech, IGNORE_ID)
         loss_text = F.cross_entropy(
-            out.text_logits, # pyright: ignore[reportAttributeAccessIssue]
+            out.text_logits,  # pyright: ignore[reportAttributeAccessIssue]
             masked_text,
             ignore_index=IGNORE_ID,
         )
         loss_speech = F.cross_entropy(
-            out.speech_logits, # pyright: ignore[reportAttributeAccessIssue]
+            out.speech_logits,  # pyright: ignore[reportAttributeAccessIssue]
             masked_speech,
             ignore_index=IGNORE_ID,
         )

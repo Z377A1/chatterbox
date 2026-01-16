@@ -195,9 +195,9 @@ class RotaryPositionalEmbeddings(nn.Module):
         neg_half_x = self._neg_half(x_rope)
 
         x_rope = (
-            (x_rope * self.cos_cached[: x.shape[0]]) # pyright: ignore[reportOptionalSubscript]
+            (x_rope * self.cos_cached[: x.shape[0]])  # pyright: ignore[reportOptionalSubscript]
             + (
-                neg_half_x * self.sin_cached[: x.shape[0]] # pyright: ignore[reportOptionalSubscript]
+                neg_half_x * self.sin_cached[: x.shape[0]]  # pyright: ignore[reportOptionalSubscript]
             )
         )
 

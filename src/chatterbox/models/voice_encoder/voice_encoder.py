@@ -46,7 +46,7 @@ def pack(arrays, seq_len: int = None, pad_value=0):  # pyright: ignore[reportArg
     packed_tensor = torch.full(  # pyright: ignore[reportCallIssue]
         packed_shape,
         pad_value,
-        dtype=tensors[0].dtype, # pyright: ignore[reportArgumentType]
+        dtype=tensors[0].dtype,  # pyright: ignore[reportArgumentType]
         device=device,
     )
 
@@ -276,7 +276,7 @@ class VoiceEncoder(nn.Module):
         # Embed them
         with torch.inference_mode():
             utt_embeds = self.inference(
-                mels.to(self.device), # pyright: ignore[reportAttributeAccessIssue]
+                mels.to(self.device),  # pyright: ignore[reportAttributeAccessIssue]
                 mel_lens,
                 batch_size=batch_size,
                 **kwargs,

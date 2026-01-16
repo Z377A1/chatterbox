@@ -150,7 +150,7 @@ def add_optional_chunk_mask(
                     num_left_chunks = torch.randint(0, max_left_chunks, (1,)).item()  # pyright: ignore[reportCallIssue, reportArgumentType]
         chunk_masks = subsequent_chunk_mask(
             xs.size(1),
-            chunk_size, # pyright: ignore[reportArgumentType]
+            chunk_size,  # pyright: ignore[reportArgumentType]
             num_left_chunks,
             xs.device,
         )  # (L, L)

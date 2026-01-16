@@ -81,7 +81,7 @@ class ChatterboxVC:
 
         s3gen_ref_wav = s3gen_ref_wav[: self.DEC_COND_LEN]
         self.ref_dict = self.s3gen.embed_ref(
-            s3gen_ref_wav, # pyright: ignore[reportArgumentType]
+            s3gen_ref_wav,  # pyright: ignore[reportArgumentType]
             S3GEN_SR,
             device=self.device,
         )

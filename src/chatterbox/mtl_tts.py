@@ -210,7 +210,7 @@ class ChatterboxMultilingualTTS:
 
         s3gen_ref_wav = s3gen_ref_wav[: self.DEC_COND_LEN]
         s3gen_ref_dict = self.s3gen.embed_ref(
-            s3gen_ref_wav, # pyright: ignore[reportArgumentType]
+            s3gen_ref_wav,  # pyright: ignore[reportArgumentType]
             S3GEN_SR,
             device=self.device,
         )
@@ -220,7 +220,7 @@ class ChatterboxMultilingualTTS:
         if plen := self.t3.hp.speech_cond_prompt_len:
             s3_tokzr = self.s3gen.tokenizer
             t3_cond_prompt_tokens, _ = s3_tokzr.forward(
-                [ref_16k_wav[: self.ENC_COND_LEN]], # pyright: ignore[reportArgumentType]
+                [ref_16k_wav[: self.ENC_COND_LEN]],  # pyright: ignore[reportArgumentType]
                 max_len=plen,
             )
             t3_cond_prompt_tokens = torch.atleast_2d(t3_cond_prompt_tokens).to(
@@ -279,7 +279,8 @@ class ChatterboxMultilingualTTS:
         # Norm and tokenize text
         text = punc_norm(text)
         text_tokens = self.tokenizer.text_to_tokens(
-            text, language_id=language_id.lower() if language_id else None # pyright: ignore[reportArgumentType]
+            text,
+            language_id=language_id.lower() if language_id else None,  # pyright: ignore[reportArgumentType]
         ).to(self.device)
         text_tokens = torch.cat(
             [text_tokens, text_tokens], dim=0
